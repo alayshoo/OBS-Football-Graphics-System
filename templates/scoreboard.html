@@ -491,7 +491,7 @@
 
         async function checkEvents() {
             try {
-                const res = await fetch('/events');
+                const res = await fetch('/events?t=' + Date.now());
                 const events = await res.json();
                 
                 events.forEach(event => {
@@ -523,15 +523,20 @@
         function displayEvent(event) {
             const card = document.getElementById('event-card');
             
+            if (!card) {
+                console.error("Event card element not found");
+                isShowingEvent = false;
+                showNextEvent();
+                return;
+            }
+            
             card.innerHTML = createEventHTML(event);
             card.className = 'event-card';
             
             if (event.type === 'goal') {
                 card.classList.add('goal');
             } else if (event.type === 'card') {
-                card.classList.add(
-                event.card_type === 'yellow' ? 'card-yellow' : 'card-red'
-                );
+                card.classList.add(event.card_type === 'yellow' ? 'card-yellow' : 'card-red');
             } else if (event.type === 'substitution') {
                 card.classList.add('substitution');
             }
@@ -544,6 +549,7 @@
                 card.classList.remove('show');
                 setTimeout(() => {
                     card.innerHTML = '';
+                    isShowingEvent = false;  // Reset flag before calling showNextEvent
                     showNextEvent();
                 }, 800);
             }, 7000);

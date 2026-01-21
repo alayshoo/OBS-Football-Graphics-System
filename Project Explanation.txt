@@ -1,0 +1,3 @@
+This projects aims at making a graphics overlay for a football video stream on OBS. 
+
+The main components are the app.py which is the backend server, the scoreboard.html which is the frontend for the OBS and also the control_interface which is the browser based controller for the whole system.

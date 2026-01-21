@@ -8,10 +8,11 @@ import socket
 import base64
 import qrcode
 import io
+import json
 import csv
 from collections import deque
 
-app_version = "0.2.0"
+app_version = "0.3.0"
 
 # Shared global state
 game_state = {
@@ -30,6 +31,15 @@ game_state = {
     'last_timer_update': time.time()
 }
 
+settings_state = {
+    'team1_name': 'Team 1',
+    'team2_name': 'Team 2',
+    'team1_bg': 'Blue',
+    'team1_text': 'White',
+    'team2_bg': 'Red',
+    'team2_text': 'White',
+}
+
 # Event notifications (stores last 50 events)
 event_queue = deque(maxlen=50)
 event_counter = 0
@@ -46,6 +56,26 @@ def get_local_ip():
         return ip
     except Exception:
         return "127.0.0.1"
+
+def load_settings():
+    """Load settings from file"""
+    if os.path.exists('settings.json'):
+        try:
+            with open('settings.json', 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading settings: {e}")
+    return settings_state.copy()
+
+def save_settings(settings):
+    """Save settings to file"""
+    try:
+        with open('settings.json', 'w', encoding='utf-8') as f:
+            json.dump(settings, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Error saving settings: {e}")
+        return False
 
 def load_team_roster(team_number):
     """Load team roster from CSV file"""
@@ -122,11 +152,16 @@ def setup():
 @app.route('/teams/load', methods=['GET'])
 def load_teams():
     """Load both team rosters"""
+    current_settings = load_settings()
     return jsonify({
         'team1': load_team_roster(1),
         'team2': load_team_roster(2),
-        'team1_name': game_state['team1_name'],
-        'team2_name': game_state['team2_name']
+        'team1_name': current_settings.get('team1_name', 'Team 1'),
+        'team2_name': current_settings.get('team2_name', 'Team 2'),
+        'team1_bg': current_settings.get('team1_bg', 'Blue'),
+        'team1_text': current_settings.get('team1_text', 'White'),
+        'team2_bg': current_settings.get('team2_bg', 'Red'),
+        'team2_text': current_settings.get('team2_text', 'White'),
     })
 
 @app.route('/teams/save', methods=['POST'])
@@ -144,6 +179,27 @@ def save_teams():
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': 'Failed to save rosters'}), 500
+
+@app.route('/settings/save', methods=['POST'])
+def save_settings_route():
+    """Save team settings"""
+    data = request.json
+    
+    settings = {
+        'team1_name': data.get('team1_name', 'Team 1'),
+        'team2_name': data.get('team2_name', 'Team 2'),
+        'team1_bg': data.get('team1_bg', 'Blue'),
+        'team1_text': data.get('team1_text', 'White'),
+        'team2_bg': data.get('team2_bg', 'Red'),
+        'team2_text': data.get('team2_text', 'White'),
+    }
+    
+    if save_settings(settings):
+        # Also update game_state
+        game_state.update(settings)
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save settings'}), 500
 
 @app.route('/state', methods=['GET'])
 def get_state():
@@ -168,7 +224,11 @@ def get_state():
 @app.route('/events', methods=['GET'])
 def get_events():
     """Get recent events (last 10)"""
-    return jsonify(list(event_queue)[-10:])
+    response = jsonify(list(event_queue)[-10:])
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/update', methods=['POST'])
 def update_state():
@@ -186,9 +246,25 @@ def update_state():
         'team2_text',
         'extra_time',
     ]
+    
+    settings_changed = False
     for field in fields:
         if field in data:
             game_state[field] = data[field]
+            if field in ['team1_name', 'team2_name', 'team1_bg', 'team1_text', 'team2_bg', 'team2_text']:
+                settings_changed = True
+
+    # Save settings if any setting-related field changed
+    if settings_changed:
+        settings = {
+            'team1_name': game_state['team1_name'],
+            'team2_name': game_state['team2_name'],
+            'team1_bg': game_state['team1_bg'],
+            'team1_text': game_state['team1_text'],
+            'team2_bg': game_state['team2_bg'],
+            'team2_text': game_state['team2_text'],
+        }
+        save_settings(settings)
 
     if 'set_time' in data:
         try:
@@ -212,9 +288,7 @@ def update_state():
                 
         elif action == 'stop':
             if game_state['timer_running']:
-                elapsed = (now - game_state['timer_anchor']) + game_state[
-                  'timer_offset'
-                ]
+                elapsed = (now - game_state['timer_anchor']) + game_state['timer_offset']
                 game_state['timer_offset'] = int(elapsed)
                 game_state['timer_anchor'] = now
                 game_state['timer_running'] = False
@@ -266,6 +340,11 @@ def BrigantiaLogo():
 
 if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
+    
+    # Load saved settings
+    saved_settings = load_settings()
+    game_state.update(saved_settings)
+    
     threading.Thread(
         target=lambda: (
             time.sleep(2),

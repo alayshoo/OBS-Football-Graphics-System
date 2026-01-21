@@ -15,39 +15,6 @@
         .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
         .connected { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
         .disconnected { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
-        
-        #settings-modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
-        #settings-modal.hidden { opacity: 0; visibility: hidden; display: none; }
-        
-        .swatch {
-            aspect-ratio: 1 / 1;
-            border-radius: 6px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .swatch:hover { transform: translateY(-2px); }
-        .swatch.active { 
-            border-color: #ffffff; 
-            box-shadow: 0 0 0 2px #38bdf8, 0 4px 12px rgba(0,0,0,0.5);
-            transform: scale(1.1);
-            z-index: 10;
-        }
-        .swatch-white { border: 1px solid rgba(255,255,255,0.1); }
-        
-        .swatch .check-icon {
-            opacity: 0;
-            width: 14px;
-            height: 14px;
-            color: white;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-        }
-        .swatch.active .check-icon { opacity: 1; }
-        .swatch-white.active .check-icon { color: #0f172a; }
 
         .team-dot { width: 12px; height: 12px; border-radius: 50%; }
         
@@ -146,12 +113,12 @@
                     </div>
                 </div>
                 
-                <button onclick="toggleSettings(true)" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group">
+                <a href="/setup" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                </button>
+                </a>
             </div>
 
             <div class="main-container items-center">
@@ -342,69 +309,6 @@
 
     </div>
 
-    <!-- Settings Overaly Panel -->
-    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden overflow-y-auto">
-        <div class="glass-card w-full max-w-2xl rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-2xl border border-white/10 my-4">
-            <div class="flex justify-between items-center mb-6 sm:mb-8 md:mb-10">
-                <div>
-                    <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white">Settings</h2>
-                    <p class="text-slate-400 text-xs sm:text-sm">Configure your teams.</p>
-                </div>
-                <button onclick="toggleSettings(false)" class="p-2 sm:p-3 bg-slate-800 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex-shrink-0">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10">
-
-                <!-- Team 1 Setup -->
-                <div class="space-y-4 sm:space-y-6">
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <div class="w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-500 rounded-full"></div>
-                        <h3 class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-400">Team 1 Setup</h3>
-                    </div>
-                    <input type="text" id="t1-name" placeholder="Team 1 Name" class="input-field w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-white font-bold text-base sm:text-lg" onchange="update('team1_name', this.value)">
-                    
-                    <div class="space-y-3 sm:space-y-4">
-                        <div>
-                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Theme Color</label>
-                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t1-bg-grid"></div>
-                        </div>
-                        <div>
-                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Text Color</label>
-                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t1-text-grid"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Team 2 Setup -->
-                <div class="space-y-4 sm:space-y-6">
-                    <div class="flex items-center gap-2 sm:gap-3">
-                        <div class="w-1 sm:w-1.5 h-5 sm:h-6 bg-rose-500 rounded-full"></div>
-                        <h3 class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-rose-400">Team 2 Setup</h3>
-                    </div>
-                    <input type="text" id="t2-name" placeholder="Team 2 Name" class="input-field w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-white font-bold text-base sm:text-lg" onchange="update('team2_name', this.value)">
-                    
-                    <div class="space-y-3 sm:space-y-4">
-                        <div>
-                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Theme Color</label>
-                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t2-bg-grid"></div>
-                        </div>
-                        <div>
-                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Text Color</label>
-                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t2-text-grid"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Save Button -->
-            <div class="mt-6 sm:mt-8 md:mt-12 pt-6 sm:pt-8 border-t border-slate-700/50 text-center">
-                <button onclick="toggleSettings(false)" class="bg-sky-600 hover:bg-sky-500 px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-lg shadow-sky-900/40 active:scale-95 transition-all">Save & Close</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const colorPalette = {
             'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444', 
@@ -429,42 +333,6 @@
         let localTimerInterval = null;
         let clockOffset = 0;
 
-        function toggleSettings(show) {
-            const modal = document.getElementById('settings-modal');
-            if(show) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            } else {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-        }
-
-        function initColorGrids() {
-            const grids = [
-                { id: 't1-bg', key: 'team1_bg' },
-                { id: 't1-text', key: 'team1_text' },
-                { id: 't2-bg', key: 'team2_bg' },
-                { id: 't2-text', key: 'team2_text' }
-            ];
-
-            grids.forEach(config => {
-                const grid = document.getElementById(`${config.id}-grid`);
-                if(!grid) return;
-                
-                grid.innerHTML = ''; 
-                Object.entries(colorPalette).forEach(([name, hex]) => {
-                    const swatch = document.createElement('div');
-                    swatch.className = `swatch ${name === 'White' ? 'swatch-white' : ''}`;
-                    swatch.style.backgroundColor = hex;
-                    swatch.title = name;
-                    swatch.id = `swatch-${config.id}-${name}`;
-                    swatch.innerHTML = checkSvg;
-                    swatch.onclick = () => update(config.key, name);
-                    grid.appendChild(swatch);
-                });
-            });
-        }
 
         function formatTime(s) {
             const m = Math.floor(s/60);
@@ -530,7 +398,7 @@
             }
 
             try {
-                await fetch('/event', {
+                const res = await fetch('/event', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -540,9 +408,16 @@
                         card_type: cardType
                     })
                 });
-                document.getElementById('card-player').value = '';
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('card-player').value = '';
+                    console.log('Card event submitted successfully, ID:', data.event_id);
+                } else {
+                    alert('Erro ao submeter cartão: ' + (data.error || 'Unknown error'));
+                }
             } catch(e) {
                 console.error('Error submitting card:', e);
+                alert('Erro de conexão ao submeter cartão');
             }
         }
 
@@ -556,7 +431,7 @@
             }
 
             try {
-                await fetch('/event', {
+                const res = await fetch('/event', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -566,10 +441,17 @@
                         player_in: playerIn
                     })
                 });
-                document.getElementById('substitution_player_out').value = '';
-                document.getElementById('substitution_player_in').value = '';
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('substitution_player_out').value = '';
+                    document.getElementById('substitution_player_in').value = '';
+                    console.log('Substitution event submitted successfully, ID:', data.event_id);
+                } else {
+                    alert('Erro ao submeter substituição: ' + (data.error || 'Unknown error'));
+                }
             } catch(e) {
                 console.error('Error submitting substitution:', e);
+                alert('Erro de conexão ao submeter substituição');
             }
         }
 
@@ -581,7 +463,7 @@
             }
 
             try {
-                await fetch('/event', {
+                const res = await fetch('/event', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -590,9 +472,16 @@
                         player: player
                     })
                 });
-                document.getElementById('goal-player').value = '';
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('goal-player').value = '';
+                    console.log('Goal event submitted successfully, ID:', data.event_id);
+                } else {
+                    alert('Erro ao submeter golo: ' + (data.error || 'Unknown error'));
+                }
             } catch(e) {
                 console.error('Error submitting goal:', e);
+                alert('Erro de conexão ao submeter golo');
             }
         }
 
@@ -617,35 +506,18 @@
                 document.getElementById('team2-btn-name').innerText = state.team2_name || 'Team 2';
                 
                 document.getElementById('t1-display-dot').style.backgroundColor = 
-                colorPalette[state.team1_bg] || '#3b82f6';
+                    colorPalette[state.team1_bg] || '#3b82f6';
                 document.getElementById('t2-display-dot').style.backgroundColor = 
-                colorPalette[state.team2_bg] || '#f43f5e';
-
-                if (document.activeElement.id !== 't1-name') 
-                document.getElementById('t1-name').value = state.team1_name;
-                if (document.activeElement.id !== 't2-name') 
-                document.getElementById('t2-name').value = state.team2_name;
+                    colorPalette[state.team2_bg] || '#f43f5e';
                 
                 document.getElementById('t1-score-val').innerText = state.team1_score;
                 document.getElementById('t2-score-val').innerText = state.team2_score;
 
                 document.getElementById('team1-btn').classList.toggle('active', selectedTeam === 'team1');
                 document.getElementById('team2-btn').classList.toggle('active', selectedTeam === 'team2');
-
-                ['team1_bg', 'team1_text', 'team2_bg', 'team2_text'].forEach(key => {
-                    const domPart = key.replace('team', 't').replace('_', '-');
-                    const value = state[key];
-                    
-                    document.querySelectorAll(`[id^="swatch-${domPart}-"]`).forEach(s => 
-                    s.classList.remove('active')
-                    );
-                    
-                    const active = document.getElementById(`swatch-${domPart}-${value}`);
-                    if (active) active.classList.add('active');
-                });
                 
                 if (document.activeElement.id !== 'extra-time-input') 
-                document.getElementById('extra-time-input').value = state.extra_time || 0;
+                    document.getElementById('extra-time-input').value = state.extra_time || 0;
 
                 // Update timer only if server state changed
                 if (state.last_timer_update !== lastTimerUpdate) {
@@ -670,7 +542,6 @@
             }
         }
 
-        initColorGrids();
         startLocalTimer();
         setInterval(sync, 1000);
         sync();
