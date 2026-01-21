@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard Pro Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
+        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #f8fafc; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);}
+        .timer-font { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.05em; }
+        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; }
+        .input-field:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .connected { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .disconnected { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        
+        #settings-modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
+        #settings-modal.hidden { opacity: 0; visibility: hidden; display: none; }
+        
+        .swatch {
+            aspect-ratio: 1 / 1;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .swatch:hover { transform: translateY(-2px); }
+        .swatch.active { 
+            border-color: #ffffff; 
+            box-shadow: 0 0 0 2px #38bdf8, 0 4px 12px rgba(0,0,0,0.5);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        .swatch-white { border: 1px solid rgba(255,255,255,0.1); }
+        
+        .swatch .check-icon {
+            opacity: 0;
+            width: 14px;
+            height: 14px;
+            color: white;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        }
+        .swatch.active .check-icon { opacity: 1; }
+        .swatch-white.active .check-icon { color: #0f172a; }
+
+        .team-dot { width: 12px; height: 12px; border-radius: 50%; }
+        
+        .main-container {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        @media (max-width: 767px) {
+            .main-container {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+            }
+            .timer-section { 
+                grid-column: 1 / -1; 
+                grid-row: 1; 
+            }
+            .team1-section { 
+                grid-column: 1;
+                grid-row: 2;
+            }
+            .team2-section { 
+                grid-column: 2;
+                grid-row: 2;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-rows: 1fr;
+            }
+            .team1-section { grid-column: 1; }
+            .timer-section { grid-column: 2; }
+            .team2-section { grid-column: 3; }
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .team-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .team-btn {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            color: rgb(148, 163, 184);
+            background: rgba(30, 41, 59, 0.4);
+            letter-spacing: 0.05em;
+        }
+
+        .team-btn:hover {
+            color: rgb(203, 213, 225);
+            border-color: rgb(71, 85, 105, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .team-btn.active {
+            border-color: rgb(56, 189, 248) !important;
+            color: rgb(226, 232, 240) !important;
+            background: rgba(56, 189, 248, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+    </style>
+</head>
+<body class="min-h-screen p-2 sm:p-4 md:p-6 flex flex-col items-center justify-center">
+    
+    <!-- Main Container -->
+    <div class="flex flex-col items-center w-full gap-6">
+
+        <!-- Main Panel -->
+        <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div class="flex justify-between items-center mb-4 sm:mb-6 md:mb-8 border-b border-slate-700/50 pb-3 sm:pb-4 md:pb-6">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <h1 class="text-base sm:text-xl md:text-2xl font-extrabold text-white">Scoreboard <span class="text-sky-400">Controller</span></h1>
+                    <div id="status-text" class="text-[8px] sm:text-[10px] uppercase tracking-widest text-slate-500 flex items-center bg-slate-900/50 px-2 sm:px-3 py-1 rounded-full border border-slate-700/50">
+                        <span id="status-dot" class="status-dot disconnected"></span>
+                        <span id="conn-text">Connecting...</span>
+                    </div>
+                </div>
+                
+                <button onclick="toggleSettings(true)" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="main-container items-center">
+                
+                <div class="team1-section text-center">
+                    <div class="flex flex-col items-center mb-3 sm:mb-4 md:mb-6">
+                        <div id="t1-display-dot" class="team-dot mb-2 sm:mb-3 shadow-[0_0_12px_rgba(59,130,246,0.5)]"></div>
+                        <h2 id="t1-display-name" class="text-lg sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight truncate w-full">TEAM 1</h2>
+                    </div>
+                    
+                    <div class="bg-blue-600/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-blue-500/20 shadow-inner">
+                        <div id="t1-score-val" class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-3 sm:mb-4 md:mb-6 text-white drop-shadow-lg">0</div>
+                        <div class="flex gap-2 sm:gap-3">
+                            <button onclick="changeScore('team1_score', 1)" class="flex-[2] bg-blue-600 hover:bg-blue-500 p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl font-bold text-lg sm:text-xl md:text-2xl shadow-lg shadow-blue-900/40 active:scale-95 transition-all">+1</button>
+                            <button onclick="changeScore('team1_score', -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl font-bold text-lg sm:text-xl md:text-2xl active:scale-95 border border-slate-700 transition-all">-</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="timer-section space-y-4 sm:space-y-6 md:space-y-8 py-2 sm:py-4">
+                    <div class="bg-slate-900/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-700/50 flex flex-col items-center">
+                        <div id="timer" class="timer-font text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white tracking-tighter bg-black/40 px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl border border-white/5 shadow-inner overflow-hidden whitespace-nowrap text-center w-full">00:00</div>
+
+                        <div class="flex w-full gap-2 sm:gap-3 mb-4 sm:mb-6 mt-4 sm:mt-6"></div>
+
+                        <div class="flex w-full gap-2 sm:gap-3 mb-4 sm:mb-6">
+                            <button onclick="timerAction('start')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg shadow-lg shadow-emerald-900/30 active:scale-95 transition-all">START</button>
+                            <button onclick="timerAction('stop')" class="flex-1 bg-amber-500 text-amber-950 py-3 sm:py-4 md:py-5 rounded-xl sm:rounded-2xl font-bold text-sm sm:text-base md:text-lg shadow-lg shadow-amber-900/20 active:scale-95 transition-all">STOP</button>
+                        </div>
+                        
+                        <div class="w-full space-y-2 sm:space-y-3">
+                            <div class="flex flex-col gap-2 sm:gap-3">
+                                <div class="relative group">
+                                    <input type="number" id="set-time-input" placeholder="Minutos" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
+                                    <button onclick="update('set_time', document.getElementById('set-time-input').value)" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-sky-600 hover:bg-sky-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">Definir</button>
+                                </div>
+                                <div class="relative group">
+                                    <input type="number" id="extra-time-input" placeholder="Minutos" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
+                                    <button onclick="update('extra_time', parseInt(document.getElementById('extra-time-input').value || 0))" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-rose-600 hover:bg-rose-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">Descontos</button>
+                                </div>
+                            </div>
+                            <button onclick="timerAction('reset')" class="w-full bg-slate-800 hover:bg-slate-700 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[0.6rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.2em] text-slate-500 hover:text-slate-300 transition-colors border border-slate-700/50">Full Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="team2-section text-center">
+                    <div class="flex flex-col items-center mb-3 sm:mb-4 md:mb-6">
+                        <div id="t2-display-dot" class="team-dot mb-2 sm:mb-3 shadow-[0_0_12px_rgba(244,63,94,0.5)]"></div>
+                        <h2 id="t2-display-name" class="text-lg sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight truncate w-full">TEAM 2</h2>
+                    </div>
+                    
+                    <div class="bg-rose-600/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-rose-500/20 shadow-inner">
+                        <div id="t2-score-val" class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-3 sm:mb-4 md:mb-6 text-white drop-shadow-lg">0</div>
+                        <div class="flex gap-2 sm:gap-3">
+                            <button onclick="changeScore('team2_score', 1)" class="flex-[2] bg-rose-600 hover:bg-rose-500 p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl font-bold text-lg sm:text-xl md:text-2xl shadow-lg shadow-rose-900/40 active:scale-95 transition-all">+1</button>
+                            <button onclick="changeScore('team2_score', -1)" class="flex-1 bg-slate-800 hover:bg-slate-700 p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl font-bold text-lg sm:text-xl md:text-2xl active:scale-95 border border-slate-700 transition-all">-</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+
+            <!-- Team Selector Container -->
+            <div class="mb-4 sm:mb-6">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-1 h-5 bg-sky-400 rounded-full"></div>
+                    <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-sky-400">Team Selection</h3>
+                </div>
+                <div class="team-selector max-w-md mx-auto">
+                    <button id="team1-btn" onclick="selectTeam('team1')" class="team-btn active">
+                        <span id="team1-btn-name">Team 1</span>
+                    </button>
+                    <button id="team2-btn" onclick="selectTeam('team2')" class="team-btn">
+                        <span id="team2-btn-name">Team 2</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Events Container -->
+            <div class="main-container items-stretch grid grid-cols-1 md:grid-cols-3">
+                
+                <!-- Penalty Cards Card -->
+                <div class="bg-slate-900/40 rounded-2xl p-4 sm:p-6 border border-slate-700/50 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                                <rect x="4" y="4" width="16" height="20" rx="2"/>
+                            </svg>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Cartões</h4>
+                        </div>
+                        <input type="number" id="card-player" placeholder="Nº Jogador" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
+                        <div class="flex gap-2">
+                            <button onclick="submitCard('yellow')" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-yellow-950 py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-yellow-900/20">Amarelo</button>
+                            <button onclick="submitCard('red')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-red-900/20">Vermelho</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Substitutions Card -->
+                <div class="bg-slate-900/40 rounded-2xl p-4 sm:p-6 border border-slate-700/50 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12M8 12h12M8 17h12M3 7h.01M3 12h.01M3 17h.01"/>
+                            </svg>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Substituição</h4>
+                        </div>
+                        <div class="flex items-center gap-2 relative">
+                            <div class="relative flex-1 group">
+                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-rose-500 uppercase tracking-tighter z-10">Sai</span>
+                                <input type="number" id="substitution_player_out" placeholder="00" 
+                                    class="input-field w-full px-4 py-4 rounded-xl text-center text-lg font-black border-rose-500/30 focus:border-rose-500 shadow-[inset_0_0_10px_rgba(244,63,94,0.5)]">
+                            </div>
+
+                            <div class="text-slate-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                </svg>
+                            </div>
+
+                            <div class="relative flex-1 group">
+                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-emerald-500 uppercase tracking-tighter z-10">Entra</span>
+                                <input type="number" id="substitution_player_in" placeholder="00" 
+                                    class="input-field w-full px-4 py-4 rounded-xl text-center text-lg font-black border-emerald-500/30 focus:border-emerald-500 shadow-[inset_0_0_10px_rgba(16,173,123,0.5)]">
+                            </div>
+                        </div>
+
+                        <button onclick="submitSubstitution()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-blue-900/40 border border-white/10">
+                            Substituição
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Goal Notification Card -->
+                <div class="bg-slate-900/40 rounded-2xl p-4 sm:p-6 border border-slate-700/50 flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Golo</h4>
+                        </div>
+                        <input type="number" id="goal-player" placeholder="Nº Marcador" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
+                        <button onclick="submitGoal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-emerald-900/20">Golo!</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer Panel -->
+        <footer class="mt-12 text-center text-slate-400 text-sm pb-6">
+            <div class="flex flex-wrap justify-center gap-4">
+                
+                <div class="glass rounded-lg px-6 py-4 flex items-center gap-4 text-left">
+                    <div>
+                        <p class="mb-1">
+                            <span class="text-slate-300 font-semibold">Acesso em Smartphone</span> 
+                        </p>
+                        <p class="text-xs font-mono text-green-400 mb-2">
+                            http://{{ local_ip }}:{{ port }}
+                        </p>
+                        <p class="text-[10px] text-slate-500 max-w-[120px] leading-tight">
+                            Digitaliza o código QR para abrir no telemóvel.
+                        </p>
+                    </div>
+                    <div class="bg-white p-1 rounded-md shadow-lg">
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="w-20 h-20">
+                    </div>
+                </div>
+
+                <div class="glass rounded-lg px-6 py-4 inline-block">
+                    <p class="mb-1">
+                        <span class="text-slate-300 font-semibold">Brigantia Score System</span> 
+                        <span class="text-slate-500">v{{ app_version }}</span>
+                    </p>
+                    <p class="text-xs">
+                        Desenvolvido por <span class="text-green-400">Diogo Aleixo</span>
+                    </p>
+                </div>
+
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Settings Overaly Panel -->
+    <div id="settings-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden overflow-y-auto">
+        <div class="glass-card w-full max-w-2xl rounded-2xl sm:rounded-[2.5rem] p-4 sm:p-6 md:p-10 shadow-2xl border border-white/10 my-4">
+            <div class="flex justify-between items-center mb-6 sm:mb-8 md:mb-10">
+                <div>
+                    <h2 class="text-xl sm:text-2xl md:text-3xl font-black text-white">Settings</h2>
+                    <p class="text-slate-400 text-xs sm:text-sm">Configure your teams.</p>
+                </div>
+                <button onclick="toggleSettings(false)" class="p-2 sm:p-3 bg-slate-800 hover:bg-slate-700 rounded-full text-slate-400 hover:text-white transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-10">
+
+                <!-- Team 1 Setup -->
+                <div class="space-y-4 sm:space-y-6">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="w-1 sm:w-1.5 h-5 sm:h-6 bg-blue-500 rounded-full"></div>
+                        <h3 class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-blue-400">Team 1 Setup</h3>
+                    </div>
+                    <input type="text" id="t1-name" placeholder="Team 1 Name" class="input-field w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-white font-bold text-base sm:text-lg" onchange="update('team1_name', this.value)">
+                    
+                    <div class="space-y-3 sm:space-y-4">
+                        <div>
+                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Theme Color</label>
+                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t1-bg-grid"></div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Text Color</label>
+                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t1-text-grid"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team 2 Setup -->
+                <div class="space-y-4 sm:space-y-6">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="w-1 sm:w-1.5 h-5 sm:h-6 bg-rose-500 rounded-full"></div>
+                        <h3 class="text-[10px] sm:text-xs font-black uppercase tracking-widest text-rose-400">Team 2 Setup</h3>
+                    </div>
+                    <input type="text" id="t2-name" placeholder="Team 2 Name" class="input-field w-full px-3 sm:px-4 md:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-white font-bold text-base sm:text-lg" onchange="update('team2_name', this.value)">
+                    
+                    <div class="space-y-3 sm:space-y-4">
+                        <div>
+                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Theme Color</label>
+                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t2-bg-grid"></div>
+                        </div>
+                        <div>
+                            <label class="text-[9px] sm:text-[10px] uppercase font-bold text-slate-500 mb-2 sm:mb-3 block tracking-tighter">Text Color</label>
+                            <div class="grid grid-cols-9 gap-1 sm:gap-1.5" id="t2-text-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div class="mt-6 sm:mt-8 md:mt-12 pt-6 sm:pt-8 border-t border-slate-700/50 text-center">
+                <button onclick="toggleSettings(false)" class="bg-sky-600 hover:bg-sky-500 px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-[0.15em] sm:tracking-[0.2em] shadow-lg shadow-sky-900/40 active:scale-95 transition-all">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colorPalette = {
+            'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444', 
+            'Orange': '#f97316', 'Yellow': '#facc15', 'Green': '#22c55e', 
+            'Cyan': '#06b6d4', 'Blue': '#3b82f6', 'Purple': '#a855f7'
+        };
+
+        const checkSvg = `
+            <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
+            </svg>
+        `;
+
+        let currentState = {};
+        let selectedTeam = 'team1';
+        
+        // Timer state
+        let timerAnchor = null;
+        let timerOffset = 0;
+        let timerRunning = false;
+        let lastTimerUpdate = 0;
+        let localTimerInterval = null;
+        let clockOffset = 0;
+
+        function toggleSettings(show) {
+            const modal = document.getElementById('settings-modal');
+            if(show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function initColorGrids() {
+            const grids = [
+                { id: 't1-bg', key: 'team1_bg' },
+                { id: 't1-text', key: 'team1_text' },
+                { id: 't2-bg', key: 'team2_bg' },
+                { id: 't2-text', key: 'team2_text' }
+            ];
+
+            grids.forEach(config => {
+                const grid = document.getElementById(`${config.id}-grid`);
+                if(!grid) return;
+                
+                grid.innerHTML = ''; 
+                Object.entries(colorPalette).forEach(([name, hex]) => {
+                    const swatch = document.createElement('div');
+                    swatch.className = `swatch ${name === 'White' ? 'swatch-white' : ''}`;
+                    swatch.style.backgroundColor = hex;
+                    swatch.title = name;
+                    swatch.id = `swatch-${config.id}-${name}`;
+                    swatch.innerHTML = checkSvg;
+                    swatch.onclick = () => update(config.key, name);
+                    grid.appendChild(swatch);
+                });
+            });
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s/60);
+            const sec = s % 60;
+            return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+        }
+
+        function calculateCurrentTime() {
+            if (!timerRunning) {
+                return timerOffset;
+            }
+            const now = Date.now() / 1000 + clockOffset;
+            const elapsed = Math.floor(now - timerAnchor);
+            return timerOffset + elapsed;
+        }
+
+        function updateTimerDisplay() {
+            const seconds = calculateCurrentTime();
+            document.getElementById('timer').innerText = formatTime(seconds);
+        }
+
+        function startLocalTimer() {
+            if (localTimerInterval) {
+                clearInterval(localTimerInterval);
+            }
+            localTimerInterval = setInterval(updateTimerDisplay, 100);
+        }
+
+        async function update(key, value) {
+            try {
+                await fetch('/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({[key]: value})
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function changeScore(teamKey, delta) {
+            const newVal = Math.max(0, (currentState[teamKey] || 0) + delta);
+            update(teamKey, newVal);
+        }
+
+        async function timerAction(action) {
+            await fetch('/update', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({timer_action: action})
+            });
+        }
+
+        function selectTeam(team) {
+            selectedTeam = team;
+            document.getElementById('team1-btn').classList.toggle('active', team === 'team1');
+            document.getElementById('team2-btn').classList.toggle('active', team === 'team2');
+        }
+
+        async function submitCard(cardType) {
+            const player = document.getElementById('card-player').value;
+            if (!player) {
+                alert('Por favor insira o número do jogador');
+                return;
+            }
+
+            try {
+                await fetch('/event', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: 'card',
+                        team: selectedTeam,
+                        player: player,
+                        card_type: cardType
+                    })
+                });
+                document.getElementById('card-player').value = '';
+            } catch(e) {
+                console.error('Error submitting card:', e);
+            }
+        }
+
+        async function submitSubstitution() {
+            const playerOut = document.getElementById('substitution_player_out').value;
+            const playerIn = document.getElementById('substitution_player_in').value;
+            
+            if (!playerOut || !playerIn) {
+                alert('Por favor insira ambos os números dos jogadores');
+                return;
+            }
+
+            try {
+                await fetch('/event', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: 'substitution',
+                        team: selectedTeam,
+                        player_out: playerOut,
+                        player_in: playerIn
+                    })
+                });
+                document.getElementById('substitution_player_out').value = '';
+                document.getElementById('substitution_player_in').value = '';
+            } catch(e) {
+                console.error('Error submitting substitution:', e);
+            }
+        }
+
+        async function submitGoal() {
+            const player = document.getElementById('goal-player').value;
+            if (!player) {
+                alert('Por favor insira o número do marcador');
+                return;
+            }
+
+            try {
+                await fetch('/event', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: 'goal',
+                        team: selectedTeam,
+                        player: player
+                    })
+                });
+                document.getElementById('goal-player').value = '';
+            } catch(e) {
+                console.error('Error submitting goal:', e);
+            }
+        }
+
+        async function sync() {
+            try {
+                const res = await fetch('/state');
+                if (!res.ok) throw new Error();
+                const state = await res.json();
+                currentState = state;
+                
+                // Sync clock offset
+                const clientReceiveTime = Date.now() / 1000;
+                clockOffset = state.server_time - clientReceiveTime;
+                
+                document.getElementById('status-dot').className = 'status-dot connected';
+                document.getElementById('conn-text').innerText = 'Connected';
+
+                document.getElementById('t1-display-name').innerText = state.team1_name || 'TEAM 1';
+                document.getElementById('t2-display-name').innerText = state.team2_name || 'TEAM 2';
+                
+                document.getElementById('team1-btn-name').innerText = state.team1_name || 'Team 1';
+                document.getElementById('team2-btn-name').innerText = state.team2_name || 'Team 2';
+                
+                document.getElementById('t1-display-dot').style.backgroundColor = 
+                colorPalette[state.team1_bg] || '#3b82f6';
+                document.getElementById('t2-display-dot').style.backgroundColor = 
+                colorPalette[state.team2_bg] || '#f43f5e';
+
+                if (document.activeElement.id !== 't1-name') 
+                document.getElementById('t1-name').value = state.team1_name;
+                if (document.activeElement.id !== 't2-name') 
+                document.getElementById('t2-name').value = state.team2_name;
+                
+                document.getElementById('t1-score-val').innerText = state.team1_score;
+                document.getElementById('t2-score-val').innerText = state.team2_score;
+
+                document.getElementById('team1-btn').classList.toggle('active', selectedTeam === 'team1');
+                document.getElementById('team2-btn').classList.toggle('active', selectedTeam === 'team2');
+
+                ['team1_bg', 'team1_text', 'team2_bg', 'team2_text'].forEach(key => {
+                    const domPart = key.replace('team', 't').replace('_', '-');
+                    const value = state[key];
+                    
+                    document.querySelectorAll(`[id^="swatch-${domPart}-"]`).forEach(s => 
+                    s.classList.remove('active')
+                    );
+                    
+                    const active = document.getElementById(`swatch-${domPart}-${value}`);
+                    if (active) active.classList.add('active');
+                });
+                
+                if (document.activeElement.id !== 'extra-time-input') 
+                document.getElementById('extra-time-input').value = state.extra_time || 0;
+
+                // Update timer only if server state changed
+                if (state.last_timer_update !== lastTimerUpdate) {
+                    lastTimerUpdate = state.last_timer_update;
+                    timerAnchor = state.timer_anchor;
+                    timerOffset = state.timer_offset;
+                    timerRunning = state.timer_running;
+                    
+                    if (timerRunning && !localTimerInterval) {
+                        startLocalTimer();
+                    } else if (!timerRunning && localTimerInterval) {
+                        clearInterval(localTimerInterval);
+                        localTimerInterval = null;
+                    }
+                    
+                    updateTimerDisplay();
+                }
+                
+            } catch(e) {
+                document.getElementById('status-dot').className = 'status-dot disconnected';
+                document.getElementById('conn-text').innerText = 'Disconnected';
+            }
+        }
+
+        initColorGrids();
+        startLocalTimer();
+        setInterval(sync, 1000);
+        sync();
+        selectTeam('team1');
+    </script>
+</body>
+</html>
