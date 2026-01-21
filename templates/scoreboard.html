@@ -238,7 +238,7 @@
         .event-type-label.substitution { color: #3b82f6; }
 
         .event-team-name {
-            font-size: 14px;
+            font-size: 24px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
@@ -262,7 +262,7 @@
         }
 
         .player-number {
-            font-size: 32px;
+            font-size: 40px;
             font-weight: 800;
             color: white;
             min-width: 50px;
@@ -277,7 +277,7 @@
         }
 
         .player-name {
-            font-size: 24px;
+            font-size: 30px;
             font-weight: 500;
             color: white;
             line-height: 1.2;
@@ -557,9 +557,9 @@
 
         function createEventHTML(event) {
             const teamName =
-            event.team === 'team1' ?
-                currentState.team1_name :
-                currentState.team2_name;
+                event.team === 'team1' ?
+                    currentState.team1_name :
+                    currentState.team2_name;
             
             let iconClass = '';
             let typeText = '';
@@ -572,20 +572,20 @@
                     <div class="player-info">
                         <div class="player-number">${event.player}</div>
                         <div class="player-details">
-                            <div class="player-name">Jogador</div>
+                            <div class="player-name">${event.player_name || ''}</div>
                         </div>
                     </div>
                 `;
             } else if (event.type === 'card') {
                 iconClass = event.card_type === 'yellow' ? 'card-yellow' : 'card-red';
                 typeText = event.card_type === 'yellow' ? 
-                'Cartão Amarelo' : 
-                'Cartão Vermelho';
+                    'Cartão Amarelo' : 
+                    'Cartão Vermelho';
                 bodyHTML = `
                     <div class="player-info">
                         <div class="player-number">${event.player}</div>
                         <div class="player-details">
-                            <div class="player-name">Jogador</div>
+                            <div class="player-name">${event.player_name || ''}</div>
                         </div>
                     </div>
                 `;
@@ -597,7 +597,7 @@
                         <div class="player-info out">
                             <div class="player-number">${event.player_out}</div>
                             <div class="player-details">
-                                <div class="player-name">Jogador</div>
+                                <div class="player-name">${event.player_out_name || ''}</div>
                             </div>
                         </div>
                         <div class="sub-divider">
@@ -608,7 +608,7 @@
                         <div class="player-info in">
                             <div class="player-number">${event.player_in}</div>
                             <div class="player-details">
-                                <div class="player-name">Jogador</div>
+                                <div class="player-name">${event.player_in_name || ''}</div>
                             </div>
                         </div>
                     </div>

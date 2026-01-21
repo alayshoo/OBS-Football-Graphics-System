@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.3.0"
+app_version = "0.4.0"
 
 # Shared global state
 game_state = {
@@ -314,6 +314,11 @@ def add_event():
     if not event_type or not team:
         return jsonify({'success': False, 'error': 'Missing type or team'}), 400
 
+    # Load the team roster and create lookup dict
+    team_number = 1 if team == 'team1' else 2
+    roster = load_team_roster(team_number)
+    player_lookup = {str(p['number']): p['name'] for p in roster}
+
     event_counter += 1
     event = {
         'id': event_counter,
@@ -323,13 +328,21 @@ def add_event():
     }
 
     if event_type == 'goal':
-        event['player'] = data.get('player', '?')
+        player_num = data.get('player', '?')
+        event['player'] = player_num
+        event['player_name'] = player_lookup.get(str(player_num), '')
     elif event_type == 'card':
-        event['player'] = data.get('player', '?')
+        player_num = data.get('player', '?')
+        event['player'] = player_num
+        event['player_name'] = player_lookup.get(str(player_num), '')
         event['card_type'] = data.get('card_type', 'yellow')
     elif event_type == 'substitution':
-        event['player_out'] = data.get('player_out', '?')
-        event['player_in'] = data.get('player_in', '?')
+        player_out = data.get('player_out', '?')
+        player_in = data.get('player_in', '?')
+        event['player_out'] = player_out
+        event['player_in'] = player_in
+        event['player_out_name'] = player_lookup.get(str(player_out), '')
+        event['player_in_name'] = player_lookup.get(str(player_in), '')
 
     event_queue.append(event)
     return jsonify({'success': True, 'event_id': event_counter})
