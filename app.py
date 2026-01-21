@@ -8,9 +8,10 @@ import socket
 import base64
 import qrcode
 import io
+import csv
 from collections import deque
 
-app_version = "0.1.0"
+app_version = "0.2.0"
 
 # Shared global state
 game_state = {
@@ -22,11 +23,11 @@ game_state = {
     'team1_text': 'White',
     'team2_bg': 'Red',
     'team2_text': 'White',
-    'timer_anchor': None,  # Unix timestamp when timer started/resumed
-    'timer_offset': 0,     # Seconds to add to elapsed time
+    'timer_anchor': None,
+    'timer_offset': 0,
     'timer_running': False,
     'extra_time': 0,
-    'last_timer_update': time.time()  # For version tracking
+    'last_timer_update': time.time()
 }
 
 # Event notifications (stores last 50 events)
@@ -38,7 +39,6 @@ CORS(app)
 
 def get_local_ip():
     try:
-        # This creates a dummy connection to determine the local interface IP
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
@@ -46,6 +46,43 @@ def get_local_ip():
         return ip
     except Exception:
         return "127.0.0.1"
+
+def load_team_roster(team_number):
+    """Load team roster from CSV file"""
+    filename = f'team{team_number}_players.csv'
+    players = []
+    
+    if os.path.exists(filename):
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    players.append({
+                        'number': row['number'],
+                        'name': row['name']
+                    })
+        except Exception as e:
+            print(f"Error loading {filename}: {e}")
+    
+    return players
+
+def save_team_roster(team_number, players):
+    """Save team roster to CSV file"""
+    filename = f'team{team_number}_players.csv'
+    
+    try:
+        with open(filename, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=['number', 'name'])
+            writer.writeheader()
+            for player in players:
+                writer.writerow({
+                    'number': player['number'],
+                    'name': player['name']
+                })
+        return True
+    except Exception as e:
+        print(f"Error saving {filename}: {e}")
+        return False
 
 @app.route('/scoreboard')
 def scoreboard():
@@ -57,13 +94,11 @@ def control():
     port = 5000
     url = f"http://{local_ip}:{port}/control"
 
-    # Generate QR Code
     qr = qrcode.QRCode(version=1, box_size=10, border=2)
     qr.add_data(url)
     qr.make(fit=True)
     qr_img = qr.make_image(fill_color="black", back_color="white")
 
-    # Convert QR to base64
     img_buffer = io.BytesIO()
     qr_img.save(img_buffer, format='PNG')
     img_buffer.seek(0)
@@ -77,12 +112,38 @@ def control():
         app_version=app_version, 
         local_ip=local_ip, 
         port=port,
-        qr_code=qr_base64 # Pass the QR code to the template
+        qr_code=qr_base64
     )
 
 @app.route('/setup')
 def setup():
-    return
+    return render_template('setup.html')
+
+@app.route('/teams/load', methods=['GET'])
+def load_teams():
+    """Load both team rosters"""
+    return jsonify({
+        'team1': load_team_roster(1),
+        'team2': load_team_roster(2),
+        'team1_name': game_state['team1_name'],
+        'team2_name': game_state['team2_name']
+    })
+
+@app.route('/teams/save', methods=['POST'])
+def save_teams():
+    """Save both team rosters"""
+    data = request.json
+    
+    team1_players = data.get('team1', [])
+    team2_players = data.get('team2', [])
+    
+    success1 = save_team_roster(1, team1_players)
+    success2 = save_team_roster(2, team2_players)
+    
+    if success1 and success2:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save rosters'}), 500
 
 @app.route('/state', methods=['GET'])
 def get_state():
@@ -101,7 +162,7 @@ def get_state():
         'timer_running': game_state['timer_running'],
         'extra_time': game_state['extra_time'],
         'last_timer_update': game_state['last_timer_update'],
-        'server_time': time.time()  # For clock sync
+        'server_time': time.time()
     })
 
 @app.route('/events', methods=['GET'])
@@ -151,7 +212,6 @@ def update_state():
                 
         elif action == 'stop':
             if game_state['timer_running']:
-                # Calculate elapsed time and store as offset
                 elapsed = (now - game_state['timer_anchor']) + game_state[
                   'timer_offset'
                 ]

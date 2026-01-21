@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Setup - Scoreboard System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background-color: #0f172a; 
+            font-family: 'Inter', sans-serif; 
+            color: #f8fafc;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .glass-card { 
+            background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .teams-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 968px) {
+            .teams-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .team-section h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .team-badge {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .team1-badge { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+        .team2-badge { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        
+        .players-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        
+        .players-table thead {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        
+        .players-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+        
+        .players-table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .players-table tbody tr:hover {
+            background: rgba(56, 189, 248, 0.05);
+        }
+        
+        .players-table td {
+            padding: 0.4rem 0.75rem;
+        }
+        
+        .input-field { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            transition: all 0.2s ease;
+            color: #f8fafc;
+            padding: 0.4rem 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+        }
+        
+        .input-field:focus { 
+            outline: none; 
+            border-color: #38bdf8; 
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); 
+        }
+        
+        .input-number {
+            width: 70px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(100, 116, 139, 0.3);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(100, 116, 139, 0.5);
+        }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-small {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            height: fit-content;
+        }
+        
+        .actions-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .save-section {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        .save-section .btn {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+        }
+        
+        .status-message {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 1.5rem;
+            color: #64748b;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ Team Setup</h1>
+            <p>Configure player rosters for both teams</p>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+        
+        <div class="teams-container">
+            <!-- Team 1 -->
+            <div class="glass-card team-section">
+                <h2>
+                    <span class="team-badge team1-badge"></span>
+                    <span id="team1Name">Team 1</span>
+                </h2>
+                
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Number</th>
+                            <th>Player Name</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="team1Players">
+                        <tr class="empty-state">
+                            <td colspan="3">No players added yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="actions-bar">
+                    <button class="btn btn-secondary" onclick="addPlayer(1)">
+                        ➕ Add Player
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Team 2 -->
+            <div class="glass-card team-section">
+                <h2>
+                    <span class="team-badge team2-badge"></span>
+                    <span id="team2Name">Team 2</span>
+                </h2>
+                
+                <table class="players-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Number</th>
+                            <th>Player Name</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="team2Players">
+                        <tr class="empty-state">
+                            <td colspan="3">No players added yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="actions-bar">
+                    <button class="btn btn-secondary" onclick="addPlayer(2)">
+                        ➕ Add Player
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="glass-card save-section">
+            <button class="btn btn-primary" onclick="saveTeams()">
+                💾 Save Rosters
+            </button>
+            <button class="btn btn-secondary" onclick="location.href='/control'">
+                ← Back to Control
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let team1Data = [];
+        let team2Data = [];
+        
+        // Load teams on page load
+        async function loadTeams() {
+            try {
+                const response = await fetch('/teams/load');
+                const data = await response.json();
+                
+                team1Data = data.team1 || [];
+                team2Data = data.team2 || [];
+                
+                document.getElementById('team1Name').textContent = data.team1_name || 'Team 1';
+                document.getElementById('team2Name').textContent = data.team2_name || 'Team 2';
+                
+                renderTeam(1);
+                renderTeam(2);
+            } catch (error) {
+                console.error('Failed to load teams:', error);
+                showStatus('Failed to load team data', 'error');
+            }
+        }
+        
+        function renderTeam(teamNum) {
+            const tbody = document.getElementById(`team${teamNum}Players`);
+            const data = teamNum === 1 ? team1Data : team2Data;
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr class="empty-state"><td colspan="3">No players added yet</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map((player, index) => `
+                <tr>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="input-field input-number" 
+                            value="${player.number}" 
+                            onchange="updatePlayer(${teamNum}, ${index}, 'number', this.value)"
+                            placeholder="#"
+                        >
+                    </td>
+                    <td>
+                        <input 
+                            type="text" 
+                            class="input-field" 
+                            value="${player.name}" 
+                            onchange="updatePlayer(${teamNum}, ${index}, 'name', this.value)"
+                            placeholder="Player Name"
+                        >
+                    </td>
+                    <td>
+                        <button 
+                            class="btn btn-danger btn-small" 
+                            onclick="removePlayer(${teamNum}, ${index})"
+                        >
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function addPlayer(teamNum) {
+            const data = teamNum === 1 ? team1Data : team2Data;
+            data.push({ number: '', name: '' });
+            renderTeam(teamNum);
+        }
+        
+        function removePlayer(teamNum, index) {
+            const data = teamNum === 1 ? team1Data : team2Data;
+            data.splice(index, 1);
+            renderTeam(teamNum);
+        }
+        
+        function updatePlayer(teamNum, index, field, value) {
+            const data = teamNum === 1 ? team1Data : team2Data;
+            data[index][field] = value;
+        }
+        
+        async function saveTeams() {
+            try {
+                const response = await fetch('/teams/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        team1: team1Data,
+                        team2: team2Data
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('✅ Team rosters saved successfully!', 'success');
+                } else {
+                    showStatus('❌ Failed to save team rosters', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to save teams:', error);
+                showStatus('❌ Failed to save team rosters', 'error');
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Load teams on page load
+        loadTeams();
+    </script>
+</body>
+</html>
