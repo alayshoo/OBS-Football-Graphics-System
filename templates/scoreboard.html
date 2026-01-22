@@ -1,34 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Stream Scoreboard</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    >
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-dark: rgba(15, 15, 15, 0.95);
             --glass-border: rgba(255, 255, 255, 0.15);
             --anchor-width: 160px;
-            --margin-offset: 40px; 
+            --margin-offset: 40px;
         }
 
-        body { 
-            margin: 0; 
-            background: transparent; 
-            overflow: hidden; 
-            font-family: 'Lexend', sans-serif; 
+        body {
+            margin: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Lexend', sans-serif;
         }
 
-        .wrapper { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: flex-start; 
-            padding: var(--margin-offset) 0 0 var(--margin-offset); 
-            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.4)); 
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: var(--margin-offset) 0 0 var(--margin-offset);
+            filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.4));
+        }
+
+        #scoreboard-wrapper {
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
 
         .bar-container {
@@ -62,25 +65,26 @@
             z-index: 2;
         }
 
-        .t1-side { 
-            border-radius: 64px 0 0 64px; 
-            justify-content: flex-end; 
-            border-right: 1px solid var(--glass-border); 
-        }
-        .t2-side { 
-            border-radius: 0 64px 64px 0; 
-            justify-content: flex-start; 
-            border-left: 1px solid var(--glass-border); 
+        .t1-side {
+            border-radius: 64px 0 0 64px;
+            justify-content: flex-end;
+            border-right: 1px solid var(--glass-border);
         }
 
-        .name { 
-            font-size: 28px; 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-            white-space: nowrap; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            transition: color 0.4s ease; 
+        .t2-side {
+            border-radius: 0 64px 64px 0;
+            justify-content: flex-start;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .name {
+            font-size: 28px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: color 0.4s ease;
         }
 
         .score-box {
@@ -89,7 +93,7 @@
             justify-content: center;
             height: 100%;
             background: var(--bg-dark);
-            font-size: 42px; 
+            font-size: 42px;
             font-weight: 800;
             color: white;
             gap: 12px;
@@ -97,9 +101,9 @@
             z-index: 11;
         }
 
-        .score-box span:nth-child(2) { 
-            color: rgba(255,255,255,0.3); 
-            font-weight: 400; 
+        .score-box span:nth-child(2) {
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 400;
         }
 
         .timer-tray {
@@ -115,14 +119,18 @@
             color: #111;
             padding: 4px 0 6px 0;
             border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             width: 100%;
             text-align: center;
             position: relative;
             z-index: 6;
         }
 
-        .time { font-size: 30px; font-weight: 800; line-height: 1; }
+        .time {
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1;
+        }
 
         .extra-pill {
             position: absolute;
@@ -172,10 +180,21 @@
             transform: translateX(0);
         }
 
-        .event-card.goal { border-color: #10b981; }
-        .event-card.card-yellow { border-color: #fbbf24; }
-        .event-card.card-red { border-color: #ef4444; }
-        .event-card.substitution { border-color: #3b82f6; }
+        .event-card.goal {
+            border-color: #10b981;
+        }
+
+        .event-card.card-yellow {
+            border-color: #fbbf24;
+        }
+
+        .event-card.card-red {
+            border-color: #ef4444;
+        }
+
+        .event-card.substitution {
+            border-color: #3b82f6;
+        }
 
         .event-header {
             display: flex;
@@ -232,10 +251,21 @@
             margin-bottom: 8px;
         }
 
-        .event-type-label.goal { color: #10b981; }
-        .event-type-label.card-yellow { color: #fbbf24; }
-        .event-type-label.card-red { color: #ef4444; }
-        .event-type-label.substitution { color: #3b82f6; }
+        .event-type-label.goal {
+            color: #10b981;
+        }
+
+        .event-type-label.card-yellow {
+            color: #fbbf24;
+        }
+
+        .event-type-label.card-red {
+            color: #ef4444;
+        }
+
+        .event-type-label.substitution {
+            color: #3b82f6;
+        }
 
         .event-team-name {
             font-size: 24px;
@@ -327,15 +357,32 @@
             background: rgba(16, 185, 129, 0.3);
         }
 
-        .player-info.out .player-number { color: #ef4444; }
-        .player-info.in .player-number { color: #10b981; }
+        .player-info.out .player-number {
+            color: #ef4444;
+        }
+
+        .player-info.in .player-number {
+            color: #10b981;
+        }
 
         @keyframes scorePop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.4); color: #fbbf24; }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.4);
+                color: #fbbf24;
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
-        .animate-score { animation: scorePop 0.6s ease-out; }
+
+        .animate-score {
+            animation: scorePop 0.6s ease-out;
+        }
 
         /* Formation Overlay */
         .formation-overlay {
@@ -348,7 +395,179 @@
             padding-bottom: 40px;
         }
 
-        .formation-overlay.show { transform: translateX(-50%) translateY(0); }
+        .formation-overlay.show {
+            transform: translateX(-50%) translateY(-4%);
+        }
+
+        body.formation-showing #scoreboard-wrapper {
+            opacity: 0;
+        }
+
+        .formation-content {
+            display: flex;
+            align-items: flex-end;
+            gap: 0;
+            position: relative;
+            transform: translateX(-180px);
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1) 0.8s;
+        }
+
+        .formation-overlay.show .formation-content {
+            transform: translateX(0);
+        }
+
+        /* Info Panel */
+        .formation-info-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            width: 350px;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: transform 0.8s ease 0.8s,
+                opacity 0.6s ease 0.8s;
+            z-index: 1;
+            margin-right: -30px;
+        }
+
+        .formation-overlay.show .formation-info-panel {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .formation-team-pill {
+            padding: 20px 40px;
+            border-radius: 30px 30px 0 0;
+            text-align: center;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .formation-team-name {
+            font-size: 32px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-panel-content {
+            background: var(--bg-dark);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-height: 750px;
+            overflow-y: auto;
+        }
+
+        .info-panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-panel-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .info-panel-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .manager-section {
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .manager-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 6px;
+        }
+
+        .manager-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .players-section,
+        .subs-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+            padding-left: 4px;
+        }
+
+        .roster-player {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 0;
+            background: none;
+            border-radius: 0;
+            border: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .roster-player.starting {
+            background: none;
+            border-color: transparent;
+        }
+
+        .roster-player.substitute {
+            opacity: 0.5;
+            background: none;
+        }
+
+        .roster-player-number {
+            font-size: 24px;
+            font-weight: 700;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .roster-player-name {
+            font-size: 20px;
+            font-weight: 500;
+            color: white;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .roster-player.substitute .roster-player-name {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .roster-player.substitute .roster-player-number {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .pitch-wrapper {
+            position: relative;
+            z-index: 2;
+        }
 
         .pitch-outer {
             padding: 30px;
@@ -391,7 +610,7 @@
 
         .penalty-area {
             position: absolute;
-        top: 0;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
             width: 512px;
@@ -431,7 +650,9 @@
             gap: 4rem;
         }
 
-        .goalkeeper-position { top: 26px; }
+        .goalkeeper-position {
+            top: 26px;
+        }
 
         .player {
             display: flex;
@@ -450,7 +671,10 @@
             justify-content: center;
         }
 
-        .jersey-svg { width: 100%; height: 100%; }
+        .jersey-svg {
+            width: 100%;
+            height: 100%;
+        }
 
         .formation-player-number {
             position: absolute;
@@ -476,13 +700,12 @@
             text-overflow: ellipsis;
             color: white;
         }
-
     </style>
 </head>
+
 <body>
 
-    
-    <div class="wrapper" style="position: relative;">
+    <div class="wrapper" id="scoreboard-wrapper" style="position: relative;">
         <div class="bar-container">
             <div class="main-bar">
                 <div id="t1-container" class="team t1-side">
@@ -509,45 +732,69 @@
 
             <div id="event-card" class="event-card"></div>
         </div>
-    </div>  
+    </div>
 
     <!-- Formation Display Overlay -->
     <div class="formation-overlay" id="formation-overlay">
-        <div class="pitch-outer">
-            <div class="pitch-container">
-                <!-- Pitch markings -->
-                <div class="center-line"></div>
-                <div class="center-circle"></div>
-                <div class="penalty-area"></div>
-                <div class="goal-area"></div>
+        <div class="formation-content">
+            <!-- Info Panel (left side) -->
+            <div class="formation-info-panel" id="formation-info-panel">
+                <div class="formation-team-pill" id="formation-team-pill">
+                    <div class="formation-team-name" id="formation-team-name">TEAM NAME</div>
+                </div>
+                <div class="info-panel-content">
+                    <div class="manager-section">
+                        <div class="manager-label">Treinador</div>
+                        <div class="manager-name" id="formation-manager">Manager Name</div>
+                    </div>
+                    <div class="players-section">
+                        <div class="section-label">Titulares</div>
+                        <div id="formation-starting"></div>
+                    </div>
+                    <div class="subs-section">
+                        <div class="section-label">Suplentes</div>
+                        <div id="formation-subs"></div>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Formation layer -->
-                <div class="formation-layer" id="formation-layer">
-                    <div class="goalkeeper-position" id="formation-gk"></div>
-                    <div class="line-positions" id="formation-line1"></div>
-                    <div class="line-positions" id="formation-line2"></div>
-                    <div class="line-positions" id="formation-line3"></div>
-                    <div class="line-positions" id="formation-line4"></div>
+            <!-- Pitch (right side) -->
+            <div class="pitch-wrapper">
+                <div class="pitch-outer">
+                    <div class="pitch-container">
+                        <!-- Pitch markings -->
+                        <div class="center-line"></div>
+                        <div class="center-circle"></div>
+                        <div class="penalty-area"></div>
+                        <div class="goal-area"></div>
+
+                        <!-- Formation layer -->
+                        <div class="formation-layer" id="formation-layer">
+                            <div class="goalkeeper-position" id="formation-gk"></div>
+                            <div class="line-positions" id="formation-line1"></div>
+                            <div class="line-positions" id="formation-line2"></div>
+                            <div class="line-positions" id="formation-line3"></div>
+                            <div class="line-positions" id="formation-line4"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <img
-        src="/BrigantiaLogo.svg"
-        style="position: absolute; top: 38px; right: 50px; height: 100px; width: 300px; object-fit: contain; filter: drop-shadow(0 0px 5px rgba(0,0,0,0.4));"
-    />
+    <img src="/BrigantiaLogo.svg"
+        style="position: absolute; top: 38px; right: 50px; height: 100px; width: 300px; object-fit: contain; filter: drop-shadow(0 0px 5px rgba(0,0,0,0.4));" />
 
     <script>
         const colors = {
-            'Black': '#000000', 
-            'White': '#ffffff', 
-            'Red': '#ef4444', 
-            'Orange': '#f97316', 
-            'Yellow': '#facc15', 
-            'Green': '#22c55e', 
-            'Cyan': '#06b6d4', 
-            'Blue': '#3b82f6', 
+            'Black': '#000000',
+            'White': '#ffffff',
+            'Red': '#ef4444',
+            'Orange': '#f97316',
+            'Yellow': '#facc15',
+            'Green': '#22c55e',
+            'Cyan': '#06b6d4',
+            'Blue': '#3b82f6',
             'Purple': '#a855f7'
         };
 
@@ -568,7 +815,7 @@
         let timerRunning = false;
         let lastTimerUpdate = 0;
         let localTimerInterval = null;
-        let clockOffset = 0; // Difference between server and client time
+        let clockOffset = 0;
 
         function formatTime(s) {
             const m = Math.floor(s / 60);
@@ -602,11 +849,10 @@
                 const res = await fetch('/state');
                 const state = await res.json();
                 currentState = state;
-                
-                // Sync clock offset
+
                 const clientReceiveTime = Date.now() / 1000;
                 clockOffset = state.server_time - clientReceiveTime;
-                
+
                 document.getElementById('t1-name').innerText = state.team1_name;
                 document.getElementById('t2-name').innerText = state.team2_name;
                 updateScore('t1-score', state.team1_score);
@@ -616,7 +862,7 @@
                 const t1Name = document.getElementById('t1-name');
                 t1Cont.style.backgroundColor = colors[state.team1_bg] || colors['Blue'];
                 t1Name.style.color = colors[state.team1_text] || colors['White'];
-                
+
                 const t2Cont = document.getElementById('t2-container');
                 const t2Name = document.getElementById('t2-name');
                 t2Cont.style.backgroundColor = colors[state.team2_bg] || colors['Red'];
@@ -630,20 +876,19 @@
                     pill.classList.remove('visible');
                 }
 
-                // Update timer only if server state changed
                 if (state.last_timer_update !== lastTimerUpdate) {
                     lastTimerUpdate = state.last_timer_update;
                     timerAnchor = state.timer_anchor;
                     timerOffset = state.timer_offset;
                     timerRunning = state.timer_running;
-                    
+
                     if (timerRunning && !localTimerInterval) {
                         startLocalTimer();
                     } else if (!timerRunning && localTimerInterval) {
                         clearInterval(localTimerInterval);
                         localTimerInterval = null;
                     }
-                    
+
                     updateTimerDisplay();
                 }
 
@@ -656,7 +901,7 @@
             try {
                 const res = await fetch('/events?t=' + Date.now());
                 const events = await res.json();
-                
+
                 events.forEach(event => {
                     if (!lastEventIds.has(event.id)) {
                         lastEventIds.add(event.id);
@@ -684,8 +929,6 @@
         }
 
         function displayEvent(event) {
-
-            // Handle formation events separately
             if (event.type === 'formation') {
                 showFormation(event);
                 isShowingEvent = false;
@@ -694,17 +937,17 @@
             }
 
             const card = document.getElementById('event-card');
-            
+
             if (!card) {
                 console.error("Event card element not found");
                 isShowingEvent = false;
                 showNextEvent();
                 return;
             }
-            
+
             card.innerHTML = createEventHTML(event);
             card.className = 'event-card';
-            
+
             if (event.type === 'goal') {
                 card.classList.add('goal');
             } else if (event.type === 'card') {
@@ -712,7 +955,7 @@
             } else if (event.type === 'substitution') {
                 card.classList.add('substitution');
             }
-            
+
             setTimeout(() => {
                 card.classList.add('show');
             }, 100);
@@ -721,7 +964,7 @@
                 card.classList.remove('show');
                 setTimeout(() => {
                     card.innerHTML = '';
-                    isShowingEvent = false;  // Reset flag before calling showNextEvent
+                    isShowingEvent = false;
                     showNextEvent();
                 }, 800);
             }, 7000);
@@ -732,7 +975,7 @@
                 event.team === 'team1' ?
                     currentState.team1_name :
                     currentState.team2_name;
-            
+
             let iconClass = '';
             let typeText = '';
             let bodyHTML = '';
@@ -750,8 +993,8 @@
                 `;
             } else if (event.type === 'card') {
                 iconClass = event.card_type === 'yellow' ? 'card-yellow' : 'card-red';
-                typeText = event.card_type === 'yellow' ? 
-                    'Cartão Amarelo' : 
+                typeText = event.card_type === 'yellow' ?
+                    'Cartão Amarelo' :
                     'Cartão Vermelho';
                 bodyHTML = `
                     <div class="player-info">
@@ -832,8 +1075,63 @@
             const textColor = colors[event.team_text] || colors["White"];
             const formation = event.formation;
             const roster = event.roster || [];
+            const teamName = event.team_name || 'TEAM';
+            const manager = event.manager || '';
 
-            // Clear existing formation
+            // Update info panel
+            const teamPill = document.getElementById('formation-team-pill');
+            teamPill.style.backgroundColor = bgColor;
+
+            const teamNameEl = document.getElementById('formation-team-name');
+            teamNameEl.innerText = teamName;
+            teamNameEl.style.color = textColor;
+
+            document.getElementById('formation-manager').innerText = manager || 'N/A';
+
+            // Get starting player numbers from formation
+            const startingNumbers = new Set();
+            if (formation.goalkeeper) {
+                startingNumbers.add(String(formation.goalkeeper));
+            }
+            formation.lines.forEach(line => {
+                line.forEach(num => startingNumbers.add(String(num)));
+            });
+
+            // Split roster into starters and subs
+            const starters = [];
+            const subs = [];
+
+            roster.forEach(player => {
+                if (startingNumbers.has(String(player.number))) {
+                    starters.push(player);
+                } else {
+                    subs.push(player);
+                }
+            });
+
+            // Sort starters by number
+            starters.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+            subs.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+
+            // Render starting players
+            const startingEl = document.getElementById('formation-starting');
+            startingEl.innerHTML = starters.map(player => `
+                <div class="roster-player starting">
+                    <div class="roster-player-number" style="color: ${bgColor};">${player.number}</div>
+                    <div class="roster-player-name">${player.name}</div>
+                </div>
+            `).join('');
+
+            // Render substitutes
+            const subsEl = document.getElementById('formation-subs');
+            subsEl.innerHTML = subs.map(player => `
+                <div class="roster-player substitute">
+                    <div class="roster-player-number" style="color: ${bgColor};">${player.number}</div>
+                    <div class="roster-player-name">${player.name}</div>
+                </div>
+            `).join('');
+
+            // Clear existing pitch formation
             document.getElementById("formation-gk").innerHTML = "";
             for (let i = 1; i <= 4; i++) {
                 const lineEl = document.getElementById(`formation-line${i}`);
@@ -845,10 +1143,10 @@
             if (formation.goalkeeper) {
                 const gkName = getPlayerName(roster, formation.goalkeeper);
                 document.getElementById("formation-gk").innerHTML = createPlayerElement(
-                formation.goalkeeper,
-                gkName,
-                bgColor,
-                textColor
+                    formation.goalkeeper,
+                    gkName,
+                    bgColor,
+                    textColor
                 );
             }
 
@@ -867,18 +1165,18 @@
             let activeLineIndex = 0;
             formation.lines.forEach((line, index) => {
                 if (line.length > 0) {
-                const lineEl = document.getElementById(`formation-line${index + 1}`);
-                lineEl.style.top = positions[activeLineIndex];
-                lineEl.style.display = "flex";
+                    const lineEl = document.getElementById(`formation-line${index + 1}`);
+                    lineEl.style.top = positions[activeLineIndex];
+                    lineEl.style.display = "flex";
 
-                lineEl.innerHTML = line
-                    .map((playerNum) => {
-                    const playerName = getPlayerName(roster, playerNum);
-                    return createPlayerElement(playerNum, playerName, bgColor, textColor);
-                    })
-                    .join("");
+                    lineEl.innerHTML = line
+                        .map((playerNum) => {
+                            const playerName = getPlayerName(roster, playerNum);
+                            return createPlayerElement(playerNum, playerName, bgColor, textColor);
+                        })
+                        .join("");
 
-                activeLineIndex++;
+                    activeLineIndex++;
                 }
             });
         }
@@ -893,19 +1191,22 @@
 
             // Show the overlay
             const overlay = document.getElementById("formation-overlay");
+            document.body.classList.add('formation-showing');
+
             setTimeout(() => {
                 overlay.classList.add("show");
             }, 100);
 
-            // Hide after display duration (e.g., 8 seconds)
+            // Hide after display duration (e.g., 10 seconds)
             setTimeout(() => {
                 overlay.classList.remove("show");
+                document.body.classList.remove('formation-showing');
 
                 // Reset state after animation completes
                 setTimeout(() => {
-                isShowingFormation = false;
-                }, 1000);
-            }, 8000);
+                    isShowingFormation = false;
+                }, 1200);
+            }, 10000);
         }
 
         function updateScore(id, val) {
@@ -922,12 +1223,13 @@
 
         // Start local timer immediately
         startLocalTimer();
-        
-        // Sync with server less frequently (every 2 seconds instead of 500ms)
+
+        // Sync with server less frequently
         setInterval(refresh, 2000);
         setInterval(checkEvents, 1000);
         refresh();
         checkEvents();
     </script>
 </body>
+
 </html>

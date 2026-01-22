@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.7.1"
+app_version = "0.8.0"
 
 # Shared global state
 game_state = {
@@ -323,12 +323,14 @@ def add_event():
         bg_key = 'team1_bg' if team == 'team1' else 'team2_bg'
         text_key = 'team1_text' if team == 'team1' else 'team2_text'
         name_key = 'team1_name' if team == 'team1' else 'team2_name'
+        manager_key = 'team1_manager' if team == 'team1' else 'team2_manager'
         
         event['formation'] = settings.get(formation_key, {'goalkeeper': '', 'lines': [[], [], [], []]})
         event['roster'] = roster
         event['team_bg'] = settings.get(bg_key, 'Blue')
         event['team_text'] = settings.get(text_key, 'White')
         event['team_name'] = settings.get(name_key, 'Team')
+        event['manager'] = settings.get(manager_key, '')
 
     event_queue.append(event)
     return jsonify({'success': True, 'event_id': event_counter})
