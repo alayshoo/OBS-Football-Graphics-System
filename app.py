@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.8.0"
+app_version = "0.8.1"
 
 # Shared global state
 game_state = {
@@ -98,7 +98,6 @@ def save_settings(settings):
         print(f"Error saving settings: {e}")
         return False
 
-
 # Routes
 
 @app.route('/')
@@ -112,7 +111,7 @@ def scoreboard():
 @app.route('/control')
 def control():
     local_ip = get_local_ip()
-    port = 5000
+    port = 8246
     url = f"http://{local_ip}:{port}/control"
 
     qr = qrcode.QRCode(version=1, box_size=10, border=2)
@@ -358,8 +357,8 @@ if __name__ == '__main__':
     threading.Thread(
         target=lambda: (
             time.sleep(2),
-            webbrowser.open('http://localhost:5000/control'),
+            webbrowser.open('http://localhost:8246/control'),
         ),
         daemon=True,
     ).start()
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=8246, debug=False, threaded=True)

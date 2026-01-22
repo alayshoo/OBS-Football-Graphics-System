@@ -93,6 +93,7 @@
         }
         .input-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
         .input-field::placeholder { color: #64748b; font-weight: 400; }
+        .input-field.error { border-color: var(--accent-red); box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); background: rgb(111, 17, 17); }
         
         .input-number {
             width: 70px; text-align: center; font-family: 'JetBrains Mono', monospace;
@@ -195,9 +196,8 @@
         .center-circle, .penalty-area, .goal-area { position: absolute; border: 2px solid white; transform: translateX(-50%); left: 50%; }
         
         .center-circle { bottom: 0; width: 150px; height: 75px; border-top-left-radius: 180px; border-top-right-radius: 180px; border-bottom: none; }
-        .penalty-area { top: 0; width: 340px; height: 135px; border-top: none; }
-        .goal-area { top: 0; width: 150px; height: 50px; border-top: none; }
-        .penalty-arc-svg { position: absolute; top: 136px; left: 52.7%; transform: translateX(-50%); width: 270px; height: 135px; pointer-events: none; }
+        .penalty-area { top: 0; width: 56.7%; height: 33.75%; border-top: none; }
+        .goal-area { top: 0; width: 25%; height: 12.5%; border-top: none; }
         .goalkeeper { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
 
     </style>
@@ -375,9 +375,6 @@
                     <div class="center-circle"></div>
                     <div class="penalty-area"></div>
                     <div class="goal-area"></div>
-                    <svg class="penalty-arc-svg" viewBox="0 0 300 150">
-                        <path d="M 75 0 A 75 75 0 0 0 190 0" stroke="white" stroke-width="2" fill="none" />
-                    </svg>
 
                     <input type="number" class="input-field input-number goalkeeper" min="1" max="99" maxlength="2" id="goalkeeper">
 
@@ -649,6 +646,7 @@
             }
             
             calculateLinePositions();
+            validateFormationInputs();
         }
 
         function calculateLinePositions() {
@@ -699,11 +697,72 @@
                         this.value = this.value.slice(0, 2);
                     }
                 });
+
+                input.addEventListener('change', validateFormationInputs);
+                input.addEventListener('blur', validateFormationInputs);
                 
                 container.appendChild(input);
             }
             
             calculateLinePositions();
+        }
+
+        function getAvailablePlayerNumbers(teamNum) {
+            const data = teamNum === 1 ? team1Data : team2Data;
+            return data
+                .map(player => player.number)
+                .filter(num => num && num.trim() !== '');
+        }
+
+        function validateFormationInputs() {
+            const teamNum = currentFormationTeam === 'team1' ? 1 : 2;
+            const availableNumbers = getAvailablePlayerNumbers(teamNum);
+            
+            // Clear previous error states
+            document.querySelectorAll('.input-number.error').forEach(input => {
+                input.classList.remove('error');
+            });
+            
+            // Check goalkeeper
+            const gkValue = gkInput.value;
+            if (gkValue && !availableNumbers.includes(gkValue)) {
+                gkInput.classList.add('error');
+            }
+            
+            // Check all line positions
+            const usedNumbers = new Set();
+            for (let i = 1; i <= 4; i++) {
+                const container = positionContainers[i];
+                const inputs = container.querySelectorAll('input');
+                
+                inputs.forEach(input => {
+                    const value = input.value;
+                    
+                    // Check if number exists in roster
+                    const numberExists = availableNumbers.includes(value);
+                    
+                    // Check if number is duplicated
+                    const isDuplicate = usedNumbers.has(value) && value;
+                    
+                    if (value && (!numberExists || isDuplicate)) {
+                        input.classList.add('error');
+                    } else {
+                        input.classList.remove('error');
+                    }
+                    
+                    if (value) {
+                        usedNumbers.add(value);
+                    }
+                });
+            }
+        }
+
+        function addValidationToLineInput(lineNumber) {
+            const input = positionContainers[lineNumber].querySelector('input:last-child');
+            if (input) {
+                input.addEventListener('change', validateFormationInputs);
+                input.addEventListener('blur', validateFormationInputs);
+            }
         }
 
         // Input validation for goalkeeper
@@ -712,6 +771,8 @@
                 this.value = this.value.slice(0, 2);
             }
         });
+        gkInput.addEventListener('change', validateFormationInputs);
+        gkInput.addEventListener('blur', validateFormationInputs);
 
         // Line input event listeners
         Object.keys(lineInputs).forEach(line => {
