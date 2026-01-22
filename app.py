@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.5.0"
+app_version = "0.6.0"
 
 # Shared global state
 game_state = {
@@ -60,60 +60,39 @@ def get_local_ip():
         return "127.0.0.1"
 
 def load_settings():
-    """Load settings from file"""
+    """Load all settings from file (teams, rosters, formations)"""
+    default = {
+        'team1_name': 'Team 1',
+        'team2_name': 'Team 2',
+        'team1_bg': 'Blue',
+        'team1_text': 'White',
+        'team2_bg': 'Red',
+        'team2_text': 'White',
+        'team1_formation': {'goalkeeper': '', 'lines': [[], [], [], []]},
+        'team2_formation': {'goalkeeper': '', 'lines': [[], [], [], []]},
+        'team1_roster': [],
+        'team2_roster': [],
+    }
+    
     if os.path.exists('settings.json'):
         try:
             with open('settings.json', 'r', encoding='utf-8') as f:
-                return json.load(f)
+                saved = json.load(f)
+                default.update(saved)
         except Exception as e:
             print(f"Error loading settings: {e}")
-    return settings_state.copy()
+    
+    return default
+
 
 def save_settings(settings):
-    """Save settings to file"""
+    """Save all settings to file"""
     try:
         with open('settings.json', 'w', encoding='utf-8') as f:
-            json.dump(settings, f, indent=2)
+            json.dump(settings, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
         print(f"Error saving settings: {e}")
-        return False
-
-def load_team_roster(team_number):
-    """Load team roster from CSV file"""
-    filename = f'team{team_number}_players.csv'
-    players = []
-    
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    players.append({
-                        'number': row['number'],
-                        'name': row['name']
-                    })
-        except Exception as e:
-            print(f"Error loading {filename}: {e}")
-    
-    return players
-
-def save_team_roster(team_number, players):
-    """Save team roster to CSV file"""
-    filename = f'team{team_number}_players.csv'
-    
-    try:
-        with open(filename, 'w', encoding='utf-8', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=['number', 'name'])
-            writer.writeheader()
-            for player in players:
-                writer.writerow({
-                    'number': player['number'],
-                    'name': player['name']
-                })
-        return True
-    except Exception as e:
-        print(f"Error saving {filename}: {e}")
         return False
 
 @app.route('/scoreboard')
@@ -151,47 +130,17 @@ def control():
 def setup():
     return render_template('setup.html')
 
-@app.route('/teams/load', methods=['GET'])
-def load_teams():
-    """Load both team rosters and formations"""
-    current_settings = load_settings()
-    default_formation = {'goalkeeper': '', 'lines': [[], [], [], []]}
-    
-    return jsonify({
-        'team1': load_team_roster(1),
-        'team2': load_team_roster(2),
-        'team1_name': current_settings.get('team1_name', 'Team 1'),
-        'team2_name': current_settings.get('team2_name', 'Team 2'),
-        'team1_bg': current_settings.get('team1_bg', 'Blue'),
-        'team1_text': current_settings.get('team1_text', 'White'),
-        'team2_bg': current_settings.get('team2_bg', 'Red'),
-        'team2_text': current_settings.get('team2_text', 'White'),
-        'team1_formation': current_settings.get('team1_formation', default_formation),
-        'team2_formation': current_settings.get('team2_formation', default_formation),
-    })
+@app.route('/setup/data', methods=['GET'])
+def get_setup_data():
+    """Load all setup data"""
+    settings = load_settings()
+    return jsonify(settings)
 
-@app.route('/teams/save', methods=['POST'])
-def save_teams():
-    """Save both team rosters"""
-    data = request.json
-    
-    team1_players = data.get('team1', [])
-    team2_players = data.get('team2', [])
-    
-    success1 = save_team_roster(1, team1_players)
-    success2 = save_team_roster(2, team2_players)
-    
-    if success1 and success2:
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False, 'error': 'Failed to save rosters'}), 500
 
-@app.route('/settings/save', methods=['POST'])
-def save_settings_route():
-    """Save team settings including formations"""
+@app.route('/setup/data', methods=['POST'])
+def save_setup_data():
+    """Save all setup data"""
     data = request.json
-    
-    default_formation = {'goalkeeper': '', 'lines': [[], [], [], []]}
     
     settings = {
         'team1_name': data.get('team1_name', 'Team 1'),
@@ -200,15 +149,21 @@ def save_settings_route():
         'team1_text': data.get('team1_text', 'White'),
         'team2_bg': data.get('team2_bg', 'Red'),
         'team2_text': data.get('team2_text', 'White'),
-        'team1_formation': data.get('team1_formation', default_formation),
-        'team2_formation': data.get('team2_formation', default_formation),
+        'team1_formation': data.get('team1_formation', {'goalkeeper': '', 'lines': [[], [], [], []]}),
+        'team2_formation': data.get('team2_formation', {'goalkeeper': '', 'lines': [[], [], [], []]}),
+        'team1_roster': data.get('team1_roster', []),
+        'team2_roster': data.get('team2_roster', []),
     }
     
     if save_settings(settings):
-        # Update game_state (excluding formations which aren't needed there)
+        # Update game_state with display-relevant fields
         game_state.update({
-            k: v for k, v in settings.items() 
-            if not k.endswith('_formation')
+            'team1_name': settings['team1_name'],
+            'team2_name': settings['team2_name'],
+            'team1_bg': settings['team1_bg'],
+            'team1_text': settings['team1_text'],
+            'team2_bg': settings['team2_bg'],
+            'team2_text': settings['team2_text'],
         })
         return jsonify({'success': True})
     else:
@@ -330,8 +285,9 @@ def add_event():
         return jsonify({'success': False, 'error': 'Missing type or team'}), 400
 
     # Load the team roster and create lookup dict
-    team_number = 1 if team == 'team1' else 2
-    roster = load_team_roster(team_number)
+    settings = load_settings()
+    roster_key = 'team1_roster' if team == 'team1' else 'team2_roster'
+    roster = settings.get(roster_key, [])
     player_lookup = {str(p['number']): p['name'] for p in roster}
 
     event_counter += 1

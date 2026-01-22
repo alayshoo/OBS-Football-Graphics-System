@@ -465,11 +465,11 @@
 
         async function loadTeams() {
             try {
-                const response = await fetch('/teams/load');
+                const response = await fetch('/setup/data');
                 const data = await response.json();
 
-                team1Data = data.team1 || [];
-                team2Data = data.team2 || [];
+                team1Data = data.team1_roster || [];
+                team2Data = data.team2_roster || [];
 
                 currentSettings = {
                     team1_name: data.team1_name || 'Team 1',
@@ -480,7 +480,6 @@
                     team2_text: data.team2_text || 'White'
                 };
 
-                // Load formations
                 formations.team1 = data.team1_formation || {
                     goalkeeper: '',
                     lines: [[], [], [], []]
@@ -498,14 +497,10 @@
                 document.getElementById('team2RosterTitle').textContent =
                     `${currentSettings.team2_name} Players`;
 
-                // Update formation team buttons
                 updateFormationTeamButtons();
-
                 updateColorSelections();
                 renderTeam(1);
                 renderTeam(2);
-
-                // Load current team's formation into the pitch
                 loadFormationFromState();
             } catch (error) {
                 console.error('Failed to load teams:', error);
@@ -732,39 +727,27 @@
         /* Pitch Script Portion End */
 
         async function saveAll() {
-            // Save current formation state before saving
             saveCurrentFormationToState();
 
             currentSettings.team1_name = document.getElementById('t1-name').value;
             currentSettings.team2_name = document.getElementById('t2-name').value;
 
             try {
-                // Save settings (including formations)
-                const settingsResponse = await fetch('/settings/save', {
+                const response = await fetch('/setup/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         ...currentSettings,
                         team1_formation: formations.team1,
-                        team2_formation: formations.team2
+                        team2_formation: formations.team2,
+                        team1_roster: team1Data,
+                        team2_roster: team2Data
                     })
                 });
 
-                const settingsResult = await settingsResponse.json();
+                const result = await response.json();
 
-                // Save rosters
-                const rostersResponse = await fetch('/teams/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        team1: team1Data,
-                        team2: team2Data
-                    })
-                });
-
-                const rostersResult = await rostersResponse.json();
-
-                if (settingsResult.success && rostersResult.success) {
+                if (result.success) {
                     showStatus('✅ All changes saved successfully!', 'success');
 
                     document.getElementById('team1RosterTitle').textContent =
@@ -774,7 +757,7 @@
 
                     return true;
                 } else {
-                    showStatus('❌ Failed to save some changes', 'error');
+                    showStatus('❌ Failed to save changes', 'error');
                     return false;
                 }
             } catch (error) {
