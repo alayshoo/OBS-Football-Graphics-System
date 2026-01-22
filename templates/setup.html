@@ -1,384 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Setup - Scoreboard System</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
-        
+
+        :root {
+            /* Colors */
+            --bg: #0f172a;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-indigo: #818cf8;
+            --accent-red: #ef4444;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --border-faint: rgba(255, 255, 255, 0.05);
+            
+            /* Effects */
+            --gradient: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+            --glass: rgba(30, 41, 59, 0.7);
+            --glass-input: rgba(15, 23, 42, 0.6);
+            --blur: blur(12px);
+            --shadow-glow: 0 0 12px;
+            
+            /* Layout */
+            --radius: 0.75rem;
+            --radius-lg: 1.5rem;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            background-color: #0f172a; 
-            font-family: 'Inter', sans-serif; 
-            color: #f8fafc;
+
+        body {
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
             padding: 1rem;
             min-height: 100vh;
         }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* --- Headers & Cards --- */
         .header {
             text-align: center;
             margin-bottom: 2rem;
             padding-bottom: 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid var(--border-light);
         }
-        
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            color: white;
-        }
-        
-        .header h1 span {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .header p {
-            color: #94a3b8;
-            font-size: 0.95rem;
-        }
-        
-        .glass-card { 
-            background: rgba(30, 41, 59, 0.7); 
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.5rem;
+        .header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; color: white; }
+        .header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: var(--text-muted); font-size: 0.95rem; }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: var(--blur);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
             padding: 1.5rem;
         }
-        
+
         .section-divider {
-            width: 100%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            background: linear-gradient(90deg, transparent, var(--border-light), transparent);
             margin: 2rem 0;
         }
-        
-        .settings-section {
-            margin-bottom: 2rem;
+
+        .settings-section { margin-bottom: 2rem; }
+        .section-title {
+            font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--accent-blue);
+            letter-spacing: 0.1em; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
         }
-        
-        .settings-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .settings-header h2 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .badge {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        
-        .badge-blue { background: #3b82f6; box-shadow: 0 0 12px rgba(59, 130, 246, 0.5); }
-        .badge-red { background: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
-        
-        .teams-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        @media (max-width: 968px) {
-            .teams-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .input-field { 
-            background: rgba(15, 23, 42, 0.6); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
+        .section-title::before { content: ''; width: 4px; height: 16px; background: var(--accent-blue); border-radius: 2px; }
+
+        /* --- Forms & Inputs --- */
+        .settings-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .settings-header h2 { font-size: 1.25rem; font-weight: 700; color: white; }
+
+        .input-field {
+            background: var(--glass-input);
+            border: 1px solid var(--border-faint);
             transition: all 0.2s ease;
-            color: #f8fafc;
+            color: var(--text);
             padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
+            border-radius: var(--radius);
             width: 100%;
             font-family: 'Inter', sans-serif;
             font-size: 0.95rem;
             font-weight: 600;
         }
-        
-        .input-field:focus { 
-            outline: none; 
-            border-color: #38bdf8; 
-            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); 
-        }
-        
-        .input-field::placeholder {
-            color: #64748b;
-            font-weight: 400;
-        }
+        .input-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        .input-field::placeholder { color: #64748b; font-weight: 400; }
         
         .input-number {
-            width: 70px;
-            text-align: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 700;
-            padding: 0.4rem 0.5rem;
-            font-size: 0.85rem;
+            width: 70px; text-align: center; font-family: 'JetBrains Mono', monospace;
+            font-weight: 700; padding: 0.4rem 0.5rem; font-size: 0.85rem;
         }
-        
-        .color-section {
-            margin-bottom: 1.5rem;
-        }
-        
-        .color-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #64748b;
-            margin-bottom: 0.75rem;
-            display: block;
-            letter-spacing: 0.05em;
-        }
-        
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            gap: 0.5rem;
-        }
+        /* Hide number spinners */
+        .input-number::-webkit-outer-spin-button, .input-number::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .input-number[type=number] { appearance: none; -moz-appearance: textfield; }
+
+        /* --- Teams & Badges --- */
+        .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        @media (max-width: 968px) { .teams-grid { grid-template-columns: 1fr; } }
+
+        .badge { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .badge-blue { background: #3b82f6; box-shadow: var(--shadow-glow) rgba(59, 130, 246, 0.5); }
+        .badge-red { background: var(--accent-red); box-shadow: var(--shadow-glow) rgba(239, 68, 68, 0.5); }
+
+        /* --- Colors & Swatches --- */
+        .color-section { margin-bottom: 1.5rem; }
+        .color-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 0.75rem; display: block; letter-spacing: 0.05em; }
+        .color-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 0.5rem; }
         
         .swatch {
-            aspect-ratio: 1 / 1;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            aspect-ratio: 1; border-radius: 0.5rem; cursor: pointer; border: 2px solid transparent;
+            transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center;
         }
+        .swatch:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent-blue); transform: scale(1.1); z-index: 10; }
+        .swatch-white { border: 1px solid var(--border-light); }
         
-        .swatch:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .swatch.active { 
-            border-color: #ffffff; 
-            box-shadow: 0 0 0 2px #38bdf8, 0 4px 12px rgba(0,0,0,0.5);
-            transform: scale(1.1);
-            z-index: 10;
-        }
-        
-        .swatch-white { border: 1px solid rgba(255,255,255,0.1); }
-        
-        .swatch .check-icon {
-            opacity: 0;
-            width: 14px;
-            height: 14px;
-            color: white;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-        }
-        
+        .check-icon { opacity: 0; width: 14px; height: 14px; color: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
         .swatch.active .check-icon { opacity: 1; }
-        .swatch-white.active .check-icon { color: #0f172a; }
-        
-        .players-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1rem;
-        }
-        
-        .players-table thead {
-            background: rgba(15, 23, 42, 0.6);
-        }
-        
+        .swatch-white.active .check-icon { color: var(--bg); }
+
+        /* --- Tables --- */
+        .players-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .players-table thead { background: var(--glass-input); }
         .players-table th {
-            padding: 0.5rem 0.75rem;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
+            padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
         }
-        
-        .players-table tbody tr {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: background 0.2s;
-        }
-        
-        .players-table tbody tr:hover {
-            background: rgba(56, 189, 248, 0.05);
-        }
-        
-        .players-table td {
-            padding: 0.4rem 0.75rem;
-        }
-        
+        .players-table tr { border-bottom: 1px solid var(--border-faint); transition: background 0.2s; }
+        .players-table tbody tr:hover { background: rgba(56, 189, 248, 0.05); }
+        .players-table td { padding: 0.4rem 0.75rem; }
+
+        /* --- Buttons --- */
         .btn {
-            padding: 0.625rem 1.25rem;
-            border: none;
+            padding: 0.625rem 1.25rem; border: none; border-radius: var(--radius);
+            font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
+        .btn-secondary { background: rgba(100, 116, 139, 0.3); color: var(--text); border: 1px solid var(--border-light); }
+        .btn-secondary:hover { background: rgba(100, 116, 139, 0.5); }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-small { padding: 0.25rem 0.5rem; font-size: 0.75rem; height: fit-content; }
+
+        .team-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .team-btn {
+            padding: 0.75rem 1rem;
             border-radius: 0.75rem;
-            font-family: 'Inter', sans-serif;
-            font-weight: 700;
             font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            text-decoration: none;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            color: white;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        .btn-secondary {
-            background: rgba(100, 116, 139, 0.3);
-            color: #f8fafc;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .btn-secondary:hover {
-            background: rgba(100, 116, 139, 0.5);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.3);
-        }
-        
-        .btn-small {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            height: fit-content;
-        }
-        
-        .actions-bar {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1rem;
-        }
-        
-        .save-section {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        .save-section .btn {
-            padding: 0.875rem 2rem;
-            font-size: 1rem;
-        }
-        
-        .status-message {
-            text-align: center;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-            display: none;
-            animation: slideDown 0.3s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .status-message.success {
-            background: rgba(16, 185, 129, 0.2);
-            color: #6ee7b7;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-        
-        .status-message.error {
-            background: rgba(239, 68, 68, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 1.5rem;
-            color: #64748b;
-            font-style: italic;
-            font-size: 0.9rem;
-        }
-        
-        .section-title {
-            font-size: 0.7rem;
+            font-weight: 700;
             text-transform: uppercase;
-            font-weight: 800;
-            color: #38bdf8;
-            letter-spacing: 0.1em;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            color: rgb(148, 163, 184);
+            background: rgba(30, 41, 59, 0.4);
+            letter-spacing: 0.05em;
+        }
+        .team-btn:hover { color: rgb(203, 213, 225); border-color: rgb(71, 85, 105, 0.5); transform: translateY(-1px); }
+        .team-btn.active {
+            border-color: rgb(56, 189, 248) !important;
+            color: rgb(226, 232, 240) !important;
+            background: rgba(56, 189, 248, 0.15) !important;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
         }
         
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 16px;
-            background: #38bdf8;
-            border-radius: 2px;
+        .save-section { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .save-section .btn { padding: 0.875rem 2rem; font-size: 1rem; }
+
+        .status-message {
+            text-align: center; padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem;
+            font-weight: 600; display: none; animation: slideDown 0.3s ease;
         }
+        .status-message.success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-message.error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .empty-state { text-align: center; padding: 1.5rem; color: #64748b; font-style: italic; font-size: 0.9rem; }
+        
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Pitch System --- */
+        .pitch-container { position: relative; width: 600px; height: 400px; background: #2d7a3e; border: 3px solid white; }
+        .line-positions { position: absolute; left: 0; right: 0; display: flex; justify-content: space-evenly; align-items: center; }
+        
+        .center-line { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: white; }
+        .center-circle, .penalty-area, .goal-area { position: absolute; border: 2px solid white; transform: translateX(-50%); left: 50%; }
+        
+        .center-circle { bottom: 0; width: 150px; height: 75px; border-top-left-radius: 180px; border-top-right-radius: 180px; border-bottom: none; }
+        .penalty-area { top: 0; width: 340px; height: 135px; border-top: none; }
+        .goal-area { top: 0; width: 150px; height: 50px; border-top: none; }
+        .penalty-arc-svg { position: absolute; top: 136px; left: 52.7%; transform: translateX(-50%); width: 270px; height: 135px; pointer-events: none; }
+        .goalkeeper { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
+
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>⚙️ Team <span>Setup</span></h1>
             <p>Configure team settings and player rosters</p>
         </div>
-        
+
         <div id="statusMessage" class="status-message"></div>
-        
+
         <!-- Team Settings Section -->
         <div class="glass-card settings-section">
             <div class="section-title">
                 <span>Team Configuration</span>
             </div>
-            
+
             <div class="teams-grid">
                 <!-- Team 1 Settings -->
                 <div>
@@ -386,48 +225,38 @@
                         <span class="badge badge-blue"></span>
                         <h2>Team 1</h2>
                     </div>
-                    
+
                     <div style="margin-bottom: 1.5rem;">
-                        <input 
-                            type="text" 
-                            id="t1-name" 
-                            placeholder="Team 1 Name" 
-                            class="input-field"
-                        >
+                        <input type="text" id="t1-name" placeholder="Team 1 Name" class="input-field">
                     </div>
-                    
+
                     <div class="color-section">
                         <label class="color-label">Theme Color</label>
                         <div class="color-grid" id="t1-bg-grid"></div>
                     </div>
-                    
+
                     <div class="color-section">
                         <label class="color-label">Text Color</label>
                         <div class="color-grid" id="t1-text-grid"></div>
                     </div>
                 </div>
-                
+
                 <!-- Team 2 Settings -->
                 <div>
                     <div class="settings-header">
                         <span class="badge badge-red"></span>
                         <h2>Team 2</h2>
                     </div>
-                    
+
                     <div style="margin-bottom: 1.5rem;">
-                        <input 
-                            type="text" 
-                            id="t2-name" 
-                            placeholder="Team 2 Name" 
-                            class="input-field"
-                        >
+                        <input type="text" id="t2-name" placeholder="Team 2 Name" class="input-field">
                     </div>
-                    
+
                     <div class="color-section">
                         <label class="color-label">Theme Color</label>
                         <div class="color-grid" id="t2-bg-grid"></div>
                     </div>
-                    
+
                     <div class="color-section">
                         <label class="color-label">Text Color</label>
                         <div class="color-grid" id="t2-text-grid"></div>
@@ -435,23 +264,22 @@
                 </div>
             </div>
         </div>
-        
-        <div class="section-divider"></div>
-        
+
         <!-- Player Rosters Section -->
         <div class="glass-card settings-section">
             <div class="section-title">
                 <span>Player Rosters</span>
             </div>
-            
+
             <div class="teams-grid">
                 <!-- Team 1 Roster -->
                 <div>
                     <div class="settings-header">
                         <span class="badge badge-blue"></span>
                         <h2 id="team1RosterTitle">Team 1 Players</h2>
+                        <button class="btn btn-secondary" onclick="addPlayer(1)"> ➕ Add Player </button>
                     </div>
-                    
+
                     <table class="players-table">
                         <thead>
                             <tr>
@@ -466,21 +294,17 @@
                             </tr>
                         </tbody>
                     </table>
-                    
-                    <div class="actions-bar">
-                        <button class="btn btn-secondary" onclick="addPlayer(1)">
-                            ➕ Add Player
-                        </button>
-                    </div>
+
                 </div>
-                
+
                 <!-- Team 2 Roster -->
                 <div>
                     <div class="settings-header">
                         <span class="badge badge-red"></span>
                         <h2 id="team2RosterTitle">Team 2 Players</h2>
+                        <button class="btn btn-secondary" onclick="addPlayer(2)"> ➕ Add Player </button>
                     </div>
-                    
+
                     <table class="players-table">
                         <thead>
                             <tr>
@@ -495,31 +319,82 @@
                             </tr>
                         </tbody>
                     </table>
-                    
-                    <div class="actions-bar">
-                        <button class="btn btn-secondary" onclick="addPlayer(2)">
-                            ➕ Add Player
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Save Buttons -->
+
+        <!-- Formation Configuration Section -->
+        <div class="glass-card settings-section">
+
+            <div class="section-title">
+                <span>Formation Configuration</span>
+            </div>
+
+            <!-- Team Selector Container -->
+            <div class="mb-4 sm:mb-6 p-4">
+                <div class="team-selector max-w-md mx-auto">
+                    <button id="team1-btn" onclick="selectTeam('team1')" class="team-btn active">
+                        <span id="team1-btn-name">Team 1</span>
+                    </button>
+                    <button id="team2-btn" onclick="selectTeam('team2')" class="team-btn">
+                        <span id="team2-btn-name">Team 2</span>
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 30px; align-items: center; padding: 2rem; justify-content: center;">
+                <div style="display: flex; flex-direction: column; gap: 2rem; align-items: center;">
+                    <div class="line-input">
+                        <label>Line 1:</label>
+                        <input class="input-field input-number" type="number" id="line1" min="0" max="9" maxlength="1" placeholder="0">
+                    </div>
+                    <div class="line-input">
+                        <label>Line 2:</label>
+                        <input class="input-field input-number" type="number" id="line2" min="0" max="9" maxlength="1" placeholder="0">
+                    </div>
+                    <div class="line-input">
+                        <label>Line 3:</label>
+                        <input class="input-field input-number" type="number" id="line3" min="0" max="9" maxlength="1" placeholder="0">
+                    </div>
+                    <div class="line-input">
+                        <label>Line 4:</label>
+                        <input class="input-field input-number" type="number" id="line4" min="0" max="9" maxlength="1" placeholder="0">
+                    </div>
+                </div>
+
+                <div class="pitch-container">
+                    <div class="center-line"></div>
+                    <div class="center-circle"></div>
+                    <div class="penalty-area"></div>
+                    <div class="goal-area"></div>
+                    <svg class="penalty-arc-svg" viewBox="0 0 300 150">
+                        <path d="M 75 0 A 75 75 0 0 0 190 0" stroke="white" stroke-width="2" fill="none" />
+                    </svg>
+
+                    <input type="number" class="input-field input-number goalkeeper" min="1" max="99" maxlength="2" id="goalkeeper">
+
+                    <div class="line-positions" id="positions1"></div>
+                    <div class="line-positions" id="positions2"></div>
+                    <div class="line-positions" id="positions3"></div>
+                    <div class="line-positions" id="positions4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Save & Control Button -->
         <div class="glass-card save-section">
-            <button class="btn btn-primary" onclick="saveAll()">
-                💾 Save All Changes
+            <button class="btn btn-primary" onclick="saveAndExit()">
+                💾 Save & Back to Control
             </button>
-            <a href="/control" class="btn btn-secondary">
-                ← Back to Control
-            </a>
         </div>
     </div>
 
     <script>
         const colorPalette = {
-            'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444', 
-            'Orange': '#f97316', 'Yellow': '#facc15', 'Green': '#22c55e', 
+            'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444',
+            'Orange': '#f97316', 'Yellow': '#facc15', 'Green': '#22c55e',
             'Cyan': '#06b6d4', 'Blue': '#3b82f6', 'Purple': '#a855f7'
         };
 
@@ -539,7 +414,7 @@
             team2_bg: 'Red',
             team2_text: 'White'
         };
-        
+
         function initColorGrids() {
             const grids = [
                 { id: 't1-bg', key: 'team1_bg' },
@@ -550,9 +425,9 @@
 
             grids.forEach(config => {
                 const grid = document.getElementById(`${config.id}-grid`);
-                if(!grid) return;
-                
-                grid.innerHTML = ''; 
+                if (!grid) return;
+
+                grid.innerHTML = '';
                 Object.entries(colorPalette).forEach(([name, hex]) => {
                     const swatch = document.createElement('div');
                     swatch.className = `swatch ${name === 'White' ? 'swatch-white' : ''}`;
@@ -564,38 +439,38 @@
                     grid.appendChild(swatch);
                 });
             });
-            
+
             updateColorSelections();
         }
-        
+
         function selectColor(key, value) {
             currentSettings[key] = value;
             updateColorSelections();
         }
-        
+
         function updateColorSelections() {
             Object.entries(currentSettings).forEach(([key, value]) => {
                 if (!key.includes('_bg') && !key.includes('_text')) return;
-                
+
                 const domPart = key.replace('team', 't').replace('_', '-');
-                
-                document.querySelectorAll(`[id^="swatch-${domPart}-"]`).forEach(s => 
+
+                document.querySelectorAll(`[id^="swatch-${domPart}-"]`).forEach(s =>
                     s.classList.remove('active')
                 );
-                
+
                 const active = document.getElementById(`swatch-${domPart}-${value}`);
                 if (active) active.classList.add('active');
             });
         }
-        
+
         async function loadTeams() {
             try {
                 const response = await fetch('/teams/load');
                 const data = await response.json();
-                
+
                 team1Data = data.team1 || [];
                 team2Data = data.team2 || [];
-                
+
                 currentSettings = {
                     team1_name: data.team1_name || 'Team 1',
                     team2_name: data.team2_name || 'Team 2',
@@ -604,33 +479,49 @@
                     team2_bg: data.team2_bg || 'Red',
                     team2_text: data.team2_text || 'White'
                 };
-                
+
+                // Load formations
+                formations.team1 = data.team1_formation || {
+                    goalkeeper: '',
+                    lines: [[], [], [], []]
+                };
+                formations.team2 = data.team2_formation || {
+                    goalkeeper: '',
+                    lines: [[], [], [], []]
+                };
+
                 document.getElementById('t1-name').value = currentSettings.team1_name;
                 document.getElementById('t2-name').value = currentSettings.team2_name;
-                
-                document.getElementById('team1RosterTitle').textContent = 
+
+                document.getElementById('team1RosterTitle').textContent =
                     `${currentSettings.team1_name} Players`;
-                document.getElementById('team2RosterTitle').textContent = 
+                document.getElementById('team2RosterTitle').textContent =
                     `${currentSettings.team2_name} Players`;
-                
+
+                // Update formation team buttons
+                updateFormationTeamButtons();
+
                 updateColorSelections();
                 renderTeam(1);
                 renderTeam(2);
+
+                // Load current team's formation into the pitch
+                loadFormationFromState();
             } catch (error) {
                 console.error('Failed to load teams:', error);
                 showStatus('❌ Failed to load team data', 'error');
             }
         }
-        
+
         function renderTeam(teamNum) {
             const tbody = document.getElementById(`team${teamNum}Players`);
             const data = teamNum === 1 ? team1Data : team2Data;
-            
+
             if (data.length === 0) {
                 tbody.innerHTML = '<tr class="empty-state"><td colspan="3">No players added yet</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = data.map((player, index) => `
                 <tr>
                     <td>
@@ -662,39 +553,205 @@
                 </tr>
             `).join('');
         }
-        
+
         function addPlayer(teamNum) {
             const data = teamNum === 1 ? team1Data : team2Data;
             data.push({ number: '', name: '' });
             renderTeam(teamNum);
         }
-        
+
         function removePlayer(teamNum, index) {
             const data = teamNum === 1 ? team1Data : team2Data;
             data.splice(index, 1);
             renderTeam(teamNum);
         }
-        
+
         function updatePlayer(teamNum, index, field, value) {
             const data = teamNum === 1 ? team1Data : team2Data;
             data[index][field] = value;
         }
-        
+
+        /* Pitch Script Portion Start */
+
+        /* Formation State */
+        let currentFormationTeam = 'team1';
+        let formations = {
+            team1: { goalkeeper: '', lines: [[], [], [], []] },
+            team2: { goalkeeper: '', lines: [[], [], [], []] }
+        };
+
+        const lineInputs = {
+            1: document.getElementById('line1'),
+            2: document.getElementById('line2'),
+            3: document.getElementById('line3'),
+            4: document.getElementById('line4')
+        };
+
+        const positionContainers = {
+            1: document.getElementById('positions1'),
+            2: document.getElementById('positions2'),
+            3: document.getElementById('positions3'),
+            4: document.getElementById('positions4')
+        };
+
+        const gkInput = document.getElementById('goalkeeper');
+
+        function selectTeam(team) {
+            // Save current team's formation before switching
+            saveCurrentFormationToState();
+            
+            // Switch team
+            currentFormationTeam = team;
+            
+            // Update button states
+            document.getElementById('team1-btn').classList.toggle('active', team === 'team1');
+            document.getElementById('team2-btn').classList.toggle('active', team === 'team2');
+            
+            // Load the selected team's formation
+            loadFormationFromState();
+        }
+
+        function saveCurrentFormationToState() {
+            const formation = formations[currentFormationTeam];
+            
+            // Save goalkeeper
+            formation.goalkeeper = gkInput.value;
+            
+            // Save each line
+            for (let i = 1; i <= 4; i++) {
+                const container = positionContainers[i];
+                const inputs = container.querySelectorAll('input');
+                formation.lines[i - 1] = Array.from(inputs).map(input => input.value);
+            }
+        }
+
+        function loadFormationFromState() {
+            const formation = formations[currentFormationTeam];
+            
+            // Load goalkeeper
+            gkInput.value = formation.goalkeeper || '';
+            
+            // Load each line
+            for (let i = 1; i <= 4; i++) {
+                const lineData = formation.lines[i - 1] || [];
+                lineInputs[i].value = lineData.length || '';
+                updateLine(i, lineData);
+            }
+            
+            calculateLinePositions();
+        }
+
+        function calculateLinePositions() {
+            const counts = [1, 2, 3, 4].map(i => parseInt(lineInputs[i].value) || 0);
+            const activeLines = counts
+                .map((count, idx) => (count > 0 ? idx + 1 : null))
+                .filter(Boolean);
+            
+            const numActive = activeLines.length;
+            
+            const positionMap = {
+                1: ['50%'],
+                2: ['30%', '70%'],
+                3: ['20%', '50%', '80%'],
+                4: ['20%', '42%', '62%', '85%']
+            };
+            
+            const positions = positionMap[numActive] || [];
+            
+            activeLines.forEach((line, index) => {
+                positionContainers[line].style.top = positions[index];
+                positionContainers[line].style.display = 'flex';
+            });
+            
+            [1, 2, 3, 4].forEach(line => {
+                if (!activeLines.includes(line)) {
+                    positionContainers[line].style.display = 'none';
+                }
+            });
+        }
+
+        function updateLine(lineNumber, existingValues = []) {
+            const count = parseInt(lineInputs[lineNumber].value) || 0;
+            const container = positionContainers[lineNumber];
+            
+            container.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.className = 'input-field input-number';
+                input.min = '1';
+                input.max = '99';
+                input.value = existingValues[i] || '';
+                
+                input.addEventListener('input', function () {
+                    if (this.value.length > 2) {
+                        this.value = this.value.slice(0, 2);
+                    }
+                });
+                
+                container.appendChild(input);
+            }
+            
+            calculateLinePositions();
+        }
+
+        // Input validation for goalkeeper
+        gkInput.addEventListener('input', function () {
+            if (this.value.length > 2) {
+                this.value = this.value.slice(0, 2);
+            }
+        });
+
+        // Line input event listeners
+        Object.keys(lineInputs).forEach(line => {
+            lineInputs[line].addEventListener('input', function () {
+                if (this.value.length > 1) {
+                    this.value = this.value.slice(0, 1);
+                }
+                
+                const val = parseInt(this.value);
+                if (val > 9) this.value = '9';
+                else if (val < 0 || isNaN(val)) this.value = '0';
+                
+                updateLine(line);
+            });
+        });
+
+        // Update team button names when team names change
+        function updateFormationTeamButtons() {
+            document.getElementById('team1-btn-name').textContent =
+                document.getElementById('t1-name').value || 'Team 1';
+            document.getElementById('team2-btn-name').textContent =
+                document.getElementById('t2-name').value || 'Team 2';
+        }
+
+        document.getElementById('t1-name').addEventListener('input', updateFormationTeamButtons);
+        document.getElementById('t2-name').addEventListener('input', updateFormationTeamButtons);
+
+        /* Pitch Script Portion End */
+
         async function saveAll() {
-            // Update settings from inputs
+            // Save current formation state before saving
+            saveCurrentFormationToState();
+
             currentSettings.team1_name = document.getElementById('t1-name').value;
             currentSettings.team2_name = document.getElementById('t2-name').value;
-            
+
             try {
-                // Save settings
+                // Save settings (including formations)
                 const settingsResponse = await fetch('/settings/save', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(currentSettings)
+                    body: JSON.stringify({
+                        ...currentSettings,
+                        team1_formation: formations.team1,
+                        team2_formation: formations.team2
+                    })
                 });
-                
+
                 const settingsResult = await settingsResponse.json();
-                
+
                 // Save rosters
                 const rostersResponse = await fetch('/teams/save', {
                     method: 'POST',
@@ -704,40 +761,53 @@
                         team2: team2Data
                     })
                 });
-                
+
                 const rostersResult = await rostersResponse.json();
-                
+
                 if (settingsResult.success && rostersResult.success) {
                     showStatus('✅ All changes saved successfully!', 'success');
-                    
-                    // Update roster titles
-                    document.getElementById('team1RosterTitle').textContent = 
+
+                    document.getElementById('team1RosterTitle').textContent =
                         `${currentSettings.team1_name} Players`;
-                    document.getElementById('team2RosterTitle').textContent = 
+                    document.getElementById('team2RosterTitle').textContent =
                         `${currentSettings.team2_name} Players`;
+
+                    return true;
                 } else {
                     showStatus('❌ Failed to save some changes', 'error');
+                    return false;
                 }
             } catch (error) {
                 console.error('Failed to save:', error);
                 showStatus('❌ Failed to save changes', 'error');
+                return false;
             }
         }
-        
+
+        async function saveAndExit() {
+            const success = await saveAll();
+            if (success) {
+                setTimeout(() => {
+                    window.location.href = '/control';
+                }, 500);
+            }
+        }
+
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
             statusEl.className = `status-message ${type}`;
             statusEl.style.display = 'block';
-            
+
             setTimeout(() => {
                 statusEl.style.display = 'none';
             }, 3000);
         }
-        
+
         // Initialize on page load
         initColorGrids();
         loadTeams();
     </script>
 </body>
+
 </html>

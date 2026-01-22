@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.4.0"
+app_version = "0.5.0"
 
 # Shared global state
 game_state = {
@@ -38,6 +38,8 @@ settings_state = {
     'team1_text': 'White',
     'team2_bg': 'Red',
     'team2_text': 'White',
+    'team1_formation': {'goalkeeper': '', 'lines': [[], [], [], []]},
+    'team2_formation': {'goalkeeper': '', 'lines': [[], [], [], []]},
 }
 
 # Event notifications (stores last 50 events)
@@ -151,8 +153,10 @@ def setup():
 
 @app.route('/teams/load', methods=['GET'])
 def load_teams():
-    """Load both team rosters"""
+    """Load both team rosters and formations"""
     current_settings = load_settings()
+    default_formation = {'goalkeeper': '', 'lines': [[], [], [], []]}
+    
     return jsonify({
         'team1': load_team_roster(1),
         'team2': load_team_roster(2),
@@ -162,6 +166,8 @@ def load_teams():
         'team1_text': current_settings.get('team1_text', 'White'),
         'team2_bg': current_settings.get('team2_bg', 'Red'),
         'team2_text': current_settings.get('team2_text', 'White'),
+        'team1_formation': current_settings.get('team1_formation', default_formation),
+        'team2_formation': current_settings.get('team2_formation', default_formation),
     })
 
 @app.route('/teams/save', methods=['POST'])
@@ -182,8 +188,10 @@ def save_teams():
 
 @app.route('/settings/save', methods=['POST'])
 def save_settings_route():
-    """Save team settings"""
+    """Save team settings including formations"""
     data = request.json
+    
+    default_formation = {'goalkeeper': '', 'lines': [[], [], [], []]}
     
     settings = {
         'team1_name': data.get('team1_name', 'Team 1'),
@@ -192,11 +200,16 @@ def save_settings_route():
         'team1_text': data.get('team1_text', 'White'),
         'team2_bg': data.get('team2_bg', 'Red'),
         'team2_text': data.get('team2_text', 'White'),
+        'team1_formation': data.get('team1_formation', default_formation),
+        'team2_formation': data.get('team2_formation', default_formation),
     }
     
     if save_settings(settings):
-        # Also update game_state
-        game_state.update(settings)
+        # Update game_state (excluding formations which aren't needed there)
+        game_state.update({
+            k: v for k, v in settings.items() 
+            if not k.endswith('_formation')
+        })
         return jsonify({'success': True})
     else:
         return jsonify({'success': False, 'error': 'Failed to save settings'}), 500
@@ -256,15 +269,17 @@ def update_state():
 
     # Save settings if any setting-related field changed
     if settings_changed:
-        settings = {
+        # Load existing settings to preserve formations
+        existing_settings = load_settings()
+        existing_settings.update({
             'team1_name': game_state['team1_name'],
             'team2_name': game_state['team2_name'],
             'team1_bg': game_state['team1_bg'],
             'team1_text': game_state['team1_text'],
             'team2_bg': game_state['team2_bg'],
             'team2_text': game_state['team2_text'],
-        }
-        save_settings(settings)
+        })
+        save_settings(existing_settings)
 
     if 'set_time' in data:
         try:
