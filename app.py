@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.6.0"
+app_version = "0.7.0"
 
 # Shared global state
 game_state = {
@@ -84,7 +84,6 @@ def load_settings():
     
     return default
 
-
 def save_settings(settings):
     """Save all settings to file"""
     try:
@@ -94,6 +93,13 @@ def save_settings(settings):
     except Exception as e:
         print(f"Error saving settings: {e}")
         return False
+
+
+# Routes
+
+@app.route('/')
+def index():
+    return redirect(url_for('control'))
 
 @app.route('/scoreboard')
 def scoreboard():
@@ -135,7 +141,6 @@ def get_setup_data():
     """Load all setup data"""
     settings = load_settings()
     return jsonify(settings)
-
 
 @app.route('/setup/data', methods=['POST'])
 def save_setup_data():
@@ -188,15 +193,6 @@ def get_state():
         'last_timer_update': game_state['last_timer_update'],
         'server_time': time.time()
     })
-
-@app.route('/events', methods=['GET'])
-def get_events():
-    """Get recent events (last 10)"""
-    response = jsonify(list(event_queue)[-10:])
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
 
 @app.route('/update', methods=['POST'])
 def update_state():
@@ -314,9 +310,29 @@ def add_event():
         event['player_in'] = player_in
         event['player_out_name'] = player_lookup.get(str(player_out), '')
         event['player_in_name'] = player_lookup.get(str(player_in), '')
+    elif event_type == 'formation':
+        formation_key = 'team1_formation' if team == 'team1' else 'team2_formation'
+        bg_key = 'team1_bg' if team == 'team1' else 'team2_bg'
+        text_key = 'team1_text' if team == 'team1' else 'team2_text'
+        name_key = 'team1_name' if team == 'team1' else 'team2_name'
+        
+        event['formation'] = settings.get(formation_key, {'goalkeeper': '', 'lines': [[], [], [], []]})
+        event['roster'] = roster
+        event['team_bg'] = settings.get(bg_key, 'Blue')
+        event['team_text'] = settings.get(text_key, 'White')
+        event['team_name'] = settings.get(name_key, 'Team')
 
     event_queue.append(event)
     return jsonify({'success': True, 'event_id': event_counter})
+
+@app.route('/events', methods=['GET'])
+def get_events():
+    """Get recent events (last 10)"""
+    response = jsonify(list(event_queue)[-10:])
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/BrigantiaLogo.svg')
 def BrigantiaLogo():

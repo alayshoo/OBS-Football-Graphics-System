@@ -269,6 +269,21 @@
             </div>
         </div>
 
+        <!-- Formation Card -->
+        <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div class="flex items-center gap-2 mb-3">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Plantel</h3>
+            </div>
+            <div class="main-container items-stretch grid grid-cols-2">
+                <button onclick="submitFormation('team1')" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-slate-900/40 border border-white/10">
+                    <span id="team1-formation-btn-name">Team 1</span>
+                </button>
+                <button onclick="submitFormation('team2')" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-slate-900/40 border border-white/10">
+                    <span id="team2-formation-btn-name">Team 2</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Footer Panel -->
         <footer class="mt-12 text-center text-slate-400 text-sm pb-6">
             <div class="flex flex-wrap justify-center gap-4">
@@ -481,6 +496,25 @@
             }
         }
 
+        async function submitFormation(team) {
+            try {
+                const res = await fetch("/event", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ type: "formation", team: team }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                    console.log('Formation event submitted successfully, ID:', data.event_id);
+                } else {
+                    alert('Erro ao submeter formação: ' + (data.error || 'Unknown error'));
+                }
+            } catch(e) {
+                console.error('Error resquesting formation', e);
+                alert('Erro de conexão ao submeter formação');
+            }
+        }
+
         async function sync() {
             try {
                 const res = await fetch('/state');
@@ -500,6 +534,8 @@
                 
                 document.getElementById('team1-btn-name').innerText = state.team1_name || 'Team 1';
                 document.getElementById('team2-btn-name').innerText = state.team2_name || 'Team 2';
+                document.getElementById('team1-formation-btn-name').innerText = state.team1_name || 'Team 1';
+                document.getElementById('team2-formation-btn-name').innerText = state.team2_name || 'Team 2';
                 
                 document.getElementById('t1-display-dot').style.backgroundColor = 
                     colorPalette[state.team1_bg] || '#3b82f6';

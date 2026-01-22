@@ -336,6 +336,147 @@
             100% { transform: scale(1); }
         }
         .animate-score { animation: scorePop 0.6s ease-out; }
+
+        /* Formation Overlay */
+        .formation-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(110%);
+            z-index: 100;
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-bottom: 40px;
+        }
+
+        .formation-overlay.show { transform: translateX(-50%) translateY(0); }
+
+        .pitch-outer {
+            padding: 30px;
+            background: #059669;
+            border-radius: 20px 20px 10px 10px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .pitch-container {
+            position: relative;
+            width: 950px;
+            height: 768px;
+            background: #059669;
+            border: 5px solid white;
+            overflow: hidden;
+        }
+
+        /* Pitch markings */
+        .center-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: white;
+        }
+
+        .center-circle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 224px;
+            height: 112px;
+            border: 5px solid white;
+            border-top-left-radius: 140px;
+            border-top-right-radius: 140px;
+            border-bottom: none;
+        }
+
+        .penalty-area {
+            position: absolute;
+        top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 512px;
+            height: 192px;
+            border: 5px solid white;
+            border-top: none;
+        }
+
+        .goal-area {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 224px;
+            height: 77px;
+            border: 5px solid white;
+            border-top: none;
+        }
+
+        /* Formation layer */
+        .formation-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .goalkeeper-position,
+        .line-positions {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4rem;
+        }
+
+        .goalkeeper-position { top: 26px; }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+        }
+
+        .jersey-container {
+            position: relative;
+            width: 83px;
+            height: 83px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .jersey-svg { width: 100%; height: 100%; }
+
+        .formation-player-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.3rem;
+            font-weight: 800;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        }
+
+        .formation-player-name {
+            font-size: 1.0rem;
+            font-weight: 600;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.4rem 0.8rem;
+            border-radius: 0.4rem;
+            white-space: nowrap;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
@@ -369,6 +510,28 @@
             <div id="event-card" class="event-card"></div>
         </div>
     </div>  
+
+    <!-- Formation Display Overlay -->
+    <div class="formation-overlay" id="formation-overlay">
+        <div class="pitch-outer">
+            <div class="pitch-container">
+                <!-- Pitch markings -->
+                <div class="center-line"></div>
+                <div class="center-circle"></div>
+                <div class="penalty-area"></div>
+                <div class="goal-area"></div>
+
+                <!-- Formation layer -->
+                <div class="formation-layer" id="formation-layer">
+                    <div class="goalkeeper-position" id="formation-gk"></div>
+                    <div class="line-positions" id="formation-line1"></div>
+                    <div class="line-positions" id="formation-line2"></div>
+                    <div class="line-positions" id="formation-line3"></div>
+                    <div class="line-positions" id="formation-line4"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <img
         src="/BrigantiaLogo.svg"
@@ -521,6 +684,15 @@
         }
 
         function displayEvent(event) {
+
+            // Handle formation events separately
+            if (event.type === 'formation') {
+                showFormation(event);
+                isShowingEvent = false;
+                showNextEvent();
+                return;
+            }
+
             const card = document.getElementById('event-card');
             
             if (!card) {
@@ -627,6 +799,113 @@
                 </div>
                 <div class="event-body">${bodyHTML}</div>
             `;
+        }
+
+        // Formation display state
+        let isShowingFormation = false;
+
+        function createPlayerElement(number, name, bgColor, textColor) {
+            const jerseySvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" height="83px" viewBox="0 -960 960 960" width="83px" fill="${bgColor}">
+                <path d="m250-569-63 35q-14 8-29.5 4.5T136-546L67-665q-8-14-4.5-24T79-707l228-133h64q11 0 17.5 6.5T395-816v15q0 38 24 62t62 24q38 0 61.5-24t23.5-62v-15q0-11 6.5-17.5T590-840h64l228 133q13 8 16 18t-4 24l-70 119q-6 13-25 17t-30-3l-62-39v412q0 16-12 27.5T667-120H289q-16 0-27.5-11.5T250-159v-410Z"/>
+                </svg>
+            `;
+
+            return `
+                <div class="player">
+                <div class="jersey-container">
+                    <div class="jersey-svg">${jerseySvg}</div>
+                    <div class="formation-player-number" style="color: ${textColor};">${number}</div>
+                </div>
+                <div class="formation-player-name">${name}</div>
+                </div>
+            `;
+        }
+
+        function getPlayerName(roster, number) {
+            const player = roster.find((p) => String(p.number) === String(number));
+            return player ? player.name : `Player ${number}`;
+        }
+
+        function renderFormationDisplay(event) {
+            const bgColor = colors[event.team_bg] || colors["Blue"];
+            const textColor = colors[event.team_text] || colors["White"];
+            const formation = event.formation;
+            const roster = event.roster || [];
+
+            // Clear existing formation
+            document.getElementById("formation-gk").innerHTML = "";
+            for (let i = 1; i <= 4; i++) {
+                const lineEl = document.getElementById(`formation-line${i}`);
+                lineEl.innerHTML = "";
+                lineEl.style.display = "none";
+            }
+
+            // Render goalkeeper
+            if (formation.goalkeeper) {
+                const gkName = getPlayerName(roster, formation.goalkeeper);
+                document.getElementById("formation-gk").innerHTML = createPlayerElement(
+                formation.goalkeeper,
+                gkName,
+                bgColor,
+                textColor
+                );
+            }
+
+            // Calculate line positions based on active lines
+            const activeLines = formation.lines.filter((line) => line.length > 0);
+            const activeLinesCount = activeLines.length;
+
+            const positionMap = {
+                1: ["55%"],
+                2: ["38%", "68%"],
+                3: ["30%", "52%", "74%"],
+                4: ["25%", "42%", "59%", "76%"],
+            };
+            const positions = positionMap[activeLinesCount] || [];
+
+            let activeLineIndex = 0;
+            formation.lines.forEach((line, index) => {
+                if (line.length > 0) {
+                const lineEl = document.getElementById(`formation-line${index + 1}`);
+                lineEl.style.top = positions[activeLineIndex];
+                lineEl.style.display = "flex";
+
+                lineEl.innerHTML = line
+                    .map((playerNum) => {
+                    const playerName = getPlayerName(roster, playerNum);
+                    return createPlayerElement(playerNum, playerName, bgColor, textColor);
+                    })
+                    .join("");
+
+                activeLineIndex++;
+                }
+            });
+        }
+
+        function showFormation(event) {
+            if (isShowingFormation) return;
+
+            isShowingFormation = true;
+
+            // Render the formation data
+            renderFormationDisplay(event);
+
+            // Show the overlay
+            const overlay = document.getElementById("formation-overlay");
+            setTimeout(() => {
+                overlay.classList.add("show");
+            }, 100);
+
+            // Hide after display duration (e.g., 8 seconds)
+            setTimeout(() => {
+                overlay.classList.remove("show");
+
+                // Reset state after animation completes
+                setTimeout(() => {
+                isShowingFormation = false;
+                }, 1000);
+            }, 8000);
         }
 
         function updateScore(id, val) {
