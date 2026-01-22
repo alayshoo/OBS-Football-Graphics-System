@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.8.1"
+app_version = "0.8.2"
 
 # Shared global state
 game_state = {
@@ -78,9 +78,9 @@ def load_settings():
         'team2_roster': [],
     }
     
-    if os.path.exists('settings.json'):
+    if os.path.exists('football_settings.json'):
         try:
-            with open('settings.json', 'r', encoding='utf-8') as f:
+            with open('football_settings.json', 'r', encoding='utf-8') as f:
                 saved = json.load(f)
                 default.update(saved)
         except Exception as e:
@@ -91,7 +91,7 @@ def load_settings():
 def save_settings(settings):
     """Save all settings to file"""
     try:
-        with open('settings.json', 'w', encoding='utf-8') as f:
+        with open('football_settings.json', 'w', encoding='utf-8') as f:
             json.dump(settings, f, indent=2, ensure_ascii=False)
         return True
     except Exception as e:
