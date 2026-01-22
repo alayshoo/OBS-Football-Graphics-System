@@ -5,18 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoreboard Pro Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/shared.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
-        body { background-color: #0f172a; font-family: 'Inter', sans-serif; color: #f8fafc; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1);}
-        .timer-font { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.05em; }
-        .input-field { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.2s ease; }
-        .input-field:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .connected { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
-        .disconnected { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+        
+        body { 
+            background-color: #0f172a; 
+            font-family: 'Inter', sans-serif; 
+            color: #f8fafc; 
+        }
+        
+        .timer-font { 
+            font-family: 'JetBrains Mono', monospace; 
+            letter-spacing: -0.05em; 
+        }
+        
+        .status-dot { 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            display: inline-block; 
+            margin-right: 6px; 
+        }
+        
+        .connected { 
+            background-color: #10b981; 
+            box-shadow: 0 0 8px #10b981; 
+        }
+        
+        .disconnected { 
+            background-color: #ef4444; 
+            box-shadow: 0 0 8px #ef4444; 
+        }
 
-        .team-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .team-dot { 
+            width: 12px; 
+            height: 12px; 
+            border-radius: 50%; 
+        }
         
         .main-container {
             display: grid;
@@ -62,39 +88,6 @@
             appearance: none;
             -moz-appearance: textfield;
         }
-
-        .team-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        .team-btn {
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            color: rgb(148, 163, 184);
-            background: rgba(30, 41, 59, 0.4);
-            letter-spacing: 0.05em;
-        }
-
-        .team-btn:hover {
-            color: rgb(203, 213, 225);
-            border-color: rgb(71, 85, 105, 0.5);
-            transform: translateY(-1px);
-        }
-
-        .team-btn.active {
-            border-color: rgb(56, 189, 248) !important;
-            color: rgb(226, 232, 240) !important;
-            background: rgba(56, 189, 248, 0.15) !important;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-        }
-
     </style>
 </head>
 <body class="min-h-screen p-2 sm:p-4 md:p-6 flex flex-col items-center justify-center">

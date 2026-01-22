@@ -1,0 +1,316 @@
+
+.formation-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(110%);
+    z-index: 100;
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+    padding-bottom: 40px;
+}
+
+.formation-overlay.show {
+    transform: translateX(-50%) translateY(-4%);
+}
+
+body.formation-showing #scoreboard-wrapper {
+    opacity: 0;
+}
+
+.formation-content {
+    display: flex;
+    align-items: flex-end;
+    gap: 0;
+    position: relative;
+    transform: translateX(-180px);
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1) 0.8s;
+}
+
+.formation-overlay.show .formation-content {
+    transform: translateX(0);
+}
+
+/* Info Panel */
+.formation-info-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 350px;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: transform 0.8s ease 0.8s,
+        opacity 0.6s ease 0.8s;
+    z-index: 1;
+    margin-right: -30px;
+}
+
+.formation-overlay.show .formation-info-panel {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.formation-team-pill {
+    padding: 20px 40px;
+    border-radius: 30px 30px 0 0;
+    text-align: center;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.formation-team-name {
+    font-size: 32px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.info-panel-content {
+    background: var(--bg-dark);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-top: none;
+    border-radius: 0 0 20px 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: 750px;
+    overflow-y: auto;
+}
+
+.info-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.info-panel-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.info-panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+
+.manager-section {
+    text-align: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.manager-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 6px;
+}
+
+.manager-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;
+}
+
+.players-section,
+.subs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+    padding-left: 4px;
+}
+
+.roster-player {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 0;
+    background: none;
+    border-radius: 0;
+    border: none;
+    transition: opacity 0.2s ease;
+}
+
+.roster-player.starting {
+    background: none;
+    border-color: transparent;
+}
+
+.roster-player.substitute {
+    opacity: 0.5;
+    background: none;
+}
+
+.roster-player-number {
+    font-size: 24px;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+.roster-player-name {
+    font-size: 20px;
+    font-weight: 500;
+    color: white;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.roster-player.substitute .roster-player-name {
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.roster-player.substitute .roster-player-number {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pitch-wrapper {
+    position: relative;
+    z-index: 2;
+}
+
+.pitch-outer {
+    padding: 30px;
+    background: #059669;
+    border-radius: 20px 20px 10px 10px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.pitch-container {
+    position: relative;
+    width: 950px;
+    height: 768px;
+    background: #059669;
+    border: 5px solid white;
+    overflow: hidden;
+}
+
+/* Pitch markings */
+.center-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: white;
+}
+
+.center-circle {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 224px;
+    height: 112px;
+    border: 5px solid white;
+    border-top-left-radius: 140px;
+    border-top-right-radius: 140px;
+    border-bottom: none;
+}
+
+.penalty-area {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 512px;
+    height: 192px;
+    border: 5px solid white;
+    border-top: none;
+}
+
+.goal-area {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 224px;
+    height: 77px;
+    border: 5px solid white;
+    border-top: none;
+}
+
+/* Formation layer */
+.formation-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.goalkeeper-position,
+.line-positions {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
+}
+
+.goalkeeper-position {
+    top: 26px;
+}
+
+.player {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+.jersey-container {
+    position: relative;
+    width: 83px;
+    height: 83px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jersey-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.formation-player-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.3rem;
+    font-weight: 800;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.formation-player-name {
+    font-size: 1.0rem;
+    font-weight: 600;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: white;
+}

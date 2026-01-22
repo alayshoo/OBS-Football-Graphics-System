@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.8.3"
+app_version = "0.8.4"
 
 # Shared global state
 game_state = {
@@ -48,7 +48,12 @@ settings_state = {
 event_queue = deque(maxlen=50)
 event_counter = 0
 
-app = Flask(__name__, template_folder='templates')
+app = Flask(
+    __name__,
+    template_folder='templates',
+    static_folder='templates',
+    static_url_path=''
+)
 CORS(app)
 
 def get_local_ip():

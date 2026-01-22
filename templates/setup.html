@@ -5,200 +5,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Team Setup - Scoreboard System</title>
+    <link rel="stylesheet" href="/css/shared.css">
+    <link rel="stylesheet" href="/css/formation_config.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
-
-        :root {
-            /* Colors */
-            --bg: #0f172a;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #38bdf8;
-            --accent-indigo: #818cf8;
-            --accent-red: #ef4444;
-            --border-light: rgba(255, 255, 255, 0.1);
-            --border-faint: rgba(255, 255, 255, 0.05);
-            
-            /* Effects */
-            --gradient: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
-            --glass: rgba(30, 41, 59, 0.7);
-            --glass-input: rgba(15, 23, 42, 0.6);
-            --blur: blur(12px);
-            --shadow-glow: 0 0 12px;
-            
-            /* Layout */
-            --radius: 0.75rem;
-            --radius-lg: 1.5rem;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
-            background-color: var(--bg);
-            font-family: 'Inter', sans-serif;
-            color: var(--text);
             padding: 1rem;
             min-height: 100vh;
         }
 
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-        /* --- Headers & Cards --- */
         .header {
             text-align: center;
             margin-bottom: 2rem;
             padding-bottom: 1.5rem;
             border-bottom: 1px solid var(--border-light);
         }
-        .header h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; color: white; }
-        .header h1 span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .header p { color: var(--text-muted); font-size: 0.95rem; }
 
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: var(--blur);
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: white;
         }
 
-        .section-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border-light), transparent);
-            margin: 2rem 0;
+        .header h1 span {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .settings-section { margin-bottom: 2rem; }
-        .section-title {
-            font-size: 0.7rem; text-transform: uppercase; font-weight: 800; color: var(--accent-blue);
-            letter-spacing: 0.1em; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
-        }
-        .section-title::before { content: ''; width: 4px; height: 16px; background: var(--accent-blue); border-radius: 2px; }
-
-        /* --- Forms & Inputs --- */
-        .settings-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
-        .settings-header h2 { font-size: 1.25rem; font-weight: 700; color: white; }
-
-        .input-field {
-            background: var(--glass-input);
-            border: 1px solid var(--border-faint);
-            transition: all 0.2s ease;
-            color: var(--text);
-            padding: 0.75rem 1rem;
-            border-radius: var(--radius);
-            width: 100%;
-            font-family: 'Inter', sans-serif;
+        .header p {
+            color: var(--text-muted);
             font-size: 0.95rem;
-            font-weight: 600;
         }
-        .input-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
-        .input-field::placeholder { color: #64748b; font-weight: 400; }
-        .input-field.error { border-color: var(--accent-red); box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); background: rgb(111, 17, 17); }
-        
-        .input-number {
-            width: 70px; text-align: center; font-family: 'JetBrains Mono', monospace;
-            font-weight: 700; padding: 0.4rem 0.5rem; font-size: 0.85rem;
-        }
-        /* Hide number spinners */
-        .input-number::-webkit-outer-spin-button, .input-number::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .input-number[type=number] { appearance: none; -moz-appearance: textfield; }
-
-        /* --- Teams & Badges --- */
-        .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
-        @media (max-width: 968px) { .teams-grid { grid-template-columns: 1fr; } }
-
-        .badge { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .badge-blue { background: #3b82f6; box-shadow: var(--shadow-glow) rgba(59, 130, 246, 0.5); }
-        .badge-red { background: var(--accent-red); box-shadow: var(--shadow-glow) rgba(239, 68, 68, 0.5); }
-
-        /* --- Colors & Swatches --- */
-        .color-section { margin-bottom: 1.5rem; }
-        .color-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: #64748b; margin-bottom: 0.75rem; display: block; letter-spacing: 0.05em; }
-        .color-grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 0.5rem; }
-        
-        .swatch {
-            aspect-ratio: 1; border-radius: 0.5rem; cursor: pointer; border: 2px solid transparent;
-            transition: all 0.2s; position: relative; display: flex; align-items: center; justify-content: center;
-        }
-        .swatch:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .swatch.active { border-color: #fff; box-shadow: 0 0 0 2px var(--accent-blue); transform: scale(1.1); z-index: 10; }
-        .swatch-white { border: 1px solid var(--border-light); }
-        
-        .check-icon { opacity: 0; width: 14px; height: 14px; color: white; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
-        .swatch.active .check-icon { opacity: 1; }
-        .swatch-white.active .check-icon { color: var(--bg); }
-
-        /* --- Tables --- */
-        .players-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
-        .players-table thead { background: var(--glass-input); }
-        .players-table th {
-            padding: 0.5rem 0.75rem; text-align: left; font-weight: 600; font-size: 0.75rem;
-            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
-        }
-        .players-table tr { border-bottom: 1px solid var(--border-faint); transition: background 0.2s; }
-        .players-table tbody tr:hover { background: rgba(56, 189, 248, 0.05); }
-        .players-table td { padding: 0.4rem 0.75rem; }
-
-        /* --- Buttons --- */
-        .btn {
-            padding: 0.625rem 1.25rem; border: none; border-radius: var(--radius);
-            font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.875rem;
-            cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; text-decoration: none;
-        }
-        .btn:hover { transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); }
-
-        .btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3); }
-        .btn-secondary { background: rgba(100, 116, 139, 0.3); color: var(--text); border: 1px solid var(--border-light); }
-        .btn-secondary:hover { background: rgba(100, 116, 139, 0.5); }
-        .btn-danger { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-small { padding: 0.25rem 0.5rem; font-size: 0.75rem; height: fit-content; }
-
-        .team-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-        .team-btn {
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            transition: all 0.2s;
-            border: 2px solid transparent;
-            color: rgb(148, 163, 184);
-            background: rgba(30, 41, 59, 0.4);
-            letter-spacing: 0.05em;
-        }
-        .team-btn:hover { color: rgb(203, 213, 225); border-color: rgb(71, 85, 105, 0.5); transform: translateY(-1px); }
-        .team-btn.active {
-            border-color: rgb(56, 189, 248) !important;
-            color: rgb(226, 232, 240) !important;
-            background: rgba(56, 189, 248, 0.15) !important;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-        }
-        
-        .save-section { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
-        .save-section .btn { padding: 0.875rem 2rem; font-size: 1rem; }
-
-        .status-message {
-            text-align: center; padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem;
-            font-weight: 600; display: none; animation: slideDown 0.3s ease;
-        }
-        .status-message.success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
-        .status-message.error { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .empty-state { text-align: center; padding: 1.5rem; color: #64748b; font-style: italic; font-size: 0.9rem; }
-        
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- Pitch System --- */
-        .pitch-container { position: relative; width: 600px; height: 400px; background: #2d7a3e; border: 3px solid white; }
-        .line-positions { position: absolute; left: 0; right: 0; display: flex; justify-content: space-evenly; align-items: center; }
-        
-        .center-line { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: white; }
-        .center-circle, .penalty-area, .goal-area { position: absolute; border: 2px solid white; transform: translateX(-50%); left: 50%; }
-        
-        .center-circle { bottom: 0; width: 150px; height: 75px; border-top-left-radius: 180px; border-top-right-radius: 180px; border-bottom: none; }
-        .penalty-area { top: 0; width: 56.7%; height: 33.75%; border-top: none; }
-        .goal-area { top: 0; width: 25%; height: 12.5%; border-top: none; }
-        .goalkeeper { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); }
 
     </style>
 </head>
@@ -554,7 +397,7 @@
                             class="btn btn-danger btn-small" 
                             onclick="removePlayer(${teamNum}, ${index})"
                         >
-                            🗑️
+                            ➖
                         </button>
                     </td>
                 </tr>

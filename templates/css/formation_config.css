@@ -1,0 +1,62 @@
+.pitch-container { 
+    position: relative; 
+    width: 600px; 
+    height: 400px; 
+    background: #2d7a3e; 
+    border: 3px solid white; 
+}
+
+.line-positions { 
+    position: absolute; 
+    left: 0; 
+    right: 0; 
+    display: flex; 
+    justify-content: space-evenly; 
+    align-items: center; 
+}
+
+.center-line { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    right: 0; 
+    height: 2px; 
+    background: white; 
+}
+
+.center-circle, .penalty-area, .goal-area { 
+    position: absolute; 
+    border: 2px solid white; 
+    transform: translateX(-50%); 
+    left: 50%; 
+}
+
+.center-circle { 
+    bottom: 0; 
+    width: 150px; 
+    height: 75px; 
+    border-top-left-radius: 180px; 
+    border-top-right-radius: 180px; 
+    border-bottom: none; 
+}
+
+.penalty-area { 
+    top: 0; 
+    width: 56.7%; 
+    height: 33.75%; 
+    border-top: none; 
+}
+
+.goal-area { 
+    top: 0; 
+    width: 25%; 
+    height: 12.5%; 
+    border-top: none; 
+}
+
+.goalkeeper { 
+    position: absolute; 
+    top: 10px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+}
