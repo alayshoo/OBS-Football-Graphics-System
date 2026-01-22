@@ -12,7 +12,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.7.0"
+app_version = "0.7.1"
 
 # Shared global state
 game_state = {
@@ -34,6 +34,8 @@ game_state = {
 settings_state = {
     'team1_name': 'Team 1',
     'team2_name': 'Team 2',
+    'team1_manager': '',
+    'team2_manager': '',
     'team1_bg': 'Blue',
     'team1_text': 'White',
     'team2_bg': 'Red',
@@ -64,6 +66,8 @@ def load_settings():
     default = {
         'team1_name': 'Team 1',
         'team2_name': 'Team 2',
+        'team1_manager': '',
+        'team2_manager': '',
         'team1_bg': 'Blue',
         'team1_text': 'White',
         'team2_bg': 'Red',
@@ -150,6 +154,8 @@ def save_setup_data():
     settings = {
         'team1_name': data.get('team1_name', 'Team 1'),
         'team2_name': data.get('team2_name', 'Team 2'),
+        'team1_manager': data.get('team1_manager', ''),
+        'team2_manager': data.get('team2_manager', ''),
         'team1_bg': data.get('team1_bg', 'Blue'),
         'team1_text': data.get('team1_text', 'White'),
         'team2_bg': data.get('team2_bg', 'Red'),
@@ -202,6 +208,8 @@ def update_state():
     fields = [
         'team1_name',
         'team2_name',
+        'team1_manager',
+        'team2_manager',
         'team1_score',
         'team2_score',
         'team1_bg',

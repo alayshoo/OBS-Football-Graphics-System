@@ -227,7 +227,11 @@
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <input type="text" id="t1-name" placeholder="Team 1 Name" class="input-field">
+                        <input type="text" id="t1-name" placeholder="Nome Equipa 1" class="input-field">
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <input type="text" id="t1-manager" placeholder="Nome do Treinador" class="input-field">
                     </div>
 
                     <div class="color-section">
@@ -249,7 +253,11 @@
                     </div>
 
                     <div style="margin-bottom: 1.5rem;">
-                        <input type="text" id="t2-name" placeholder="Team 2 Name" class="input-field">
+                        <input type="text" id="t2-name" placeholder="Nome Equipa 2" class="input-field">
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <input type="text" id="t2-manager" placeholder="Nome do Treinador" class="input-field">
                     </div>
 
                     <div class="color-section">
@@ -409,6 +417,8 @@
         let currentSettings = {
             team1_name: 'Team 1',
             team2_name: 'Team 2',
+            team1_manager: '',
+            team2_manager: '',
             team1_bg: 'Blue',
             team1_text: 'White',
             team2_bg: 'Red',
@@ -474,6 +484,8 @@
                 currentSettings = {
                     team1_name: data.team1_name || 'Team 1',
                     team2_name: data.team2_name || 'Team 2',
+                    team1_manager: data.team1_manager || '',
+                    team2_manager: data.team2_manager || '',
                     team1_bg: data.team1_bg || 'Blue',
                     team1_text: data.team1_text || 'White',
                     team2_bg: data.team2_bg || 'Red',
@@ -491,6 +503,9 @@
 
                 document.getElementById('t1-name').value = currentSettings.team1_name;
                 document.getElementById('t2-name').value = currentSettings.team2_name;
+
+                document.getElementById('t1-manager').value = currentSettings.team1_manager;
+                document.getElementById('t2-manager').value = currentSettings.team2_manager;
 
                 document.getElementById('team1RosterTitle').textContent =
                     `${currentSettings.team1_name} Players`;
@@ -731,6 +746,8 @@
 
             currentSettings.team1_name = document.getElementById('t1-name').value;
             currentSettings.team2_name = document.getElementById('t2-name').value;
+            currentSettings.team1_manager = document.getElementById('t1-manager').value;
+            currentSettings.team2_manager = document.getElementById('t2-manager').value;
 
             try {
                 const response = await fetch('/setup/data', {
