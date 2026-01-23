@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoreboard Pro Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/shared.css">
+    <link rel="stylesheet" href="css/shared.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
         
@@ -145,12 +145,12 @@
                         <div class="w-full space-y-2 sm:space-y-3">
                             <div class="flex flex-col gap-2 sm:gap-3">
                                 <div class="relative group">
-                                    <input type="number" id="set-time-input" placeholder="Minutos" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
-                                    <button onclick="update('set_time', document.getElementById('set-time-input').value)" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-sky-600 hover:bg-sky-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">Definir</button>
+                                    <input type="number" id="set-time-input" placeholder="Minutes" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
+                                    <button onclick="update('set_time', document.getElementById('set-time-input').value)" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-sky-600 hover:bg-sky-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">SET</button>
                                 </div>
                                 <div class="relative group">
-                                    <input type="number" id="extra-time-input" placeholder="Minutos" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
-                                    <button onclick="update('extra_time', document.getElementById('extra-time-input').value)" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-rose-600 hover:bg-rose-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">Descontos</button>
+                                    <input type="number" id="extra-time-input" placeholder="Minutes" class="input-field w-full px-3 sm:px-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold text-left">
+                                    <button onclick="update('extra_time', document.getElementById('extra-time-input').value)" class="absolute right-1 sm:right-1.5 top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 px-2 sm:px-3 md:px-4 bg-rose-600 hover:bg-rose-500 rounded-md sm:rounded-lg text-[0.6rem] sm:text-xs font-black uppercase transition-all">EXTRA TIME</button>
                                 </div>
                             </div>
                             <button onclick="timerAction('reset')" class="w-full bg-slate-800 hover:bg-slate-700 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[0.6rem] sm:text-[0.625rem] font-bold uppercase tracking-[0.2em] text-slate-500 hover:text-slate-300 transition-colors border border-slate-700/50">Full Reset</button>
@@ -200,12 +200,12 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
                                 <rect x="4" y="4" width="16" height="20" rx="2"/>
                             </svg>
-                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Cartões</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Cards</h4>
                         </div>
-                        <input type="number" id="card-player" placeholder="Nº Jogador" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
+                        <input type="number" id="card-player" placeholder="Player Number" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
                         <div class="flex gap-2">
-                            <button onclick="submitCard('yellow')" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-yellow-950 py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-yellow-900/20">Amarelo</button>
-                            <button onclick="submitCard('red')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-red-900/20">Vermelho</button>
+                            <button onclick="submitCard('yellow')" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-yellow-950 py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-yellow-900/20">Yellow</button>
+                            <button onclick="submitCard('red')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-red-900/20">Red</button>
                         </div>
                     </div>
                 </div>
@@ -217,11 +217,11 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12M8 12h12M8 17h12M3 7h.01M3 12h.01M3 17h.01"/>
                             </svg>
-                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Substituição</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Substitution</h4>
                         </div>
                         <div class="flex items-center gap-2 relative">
                             <div class="relative flex-1 group">
-                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-rose-500 uppercase tracking-tighter z-10">Sai</span>
+                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-rose-500 uppercase tracking-tighter z-10">Out</span>
                                 <input type="number" id="substitution_player_out" placeholder="00" 
                                     class="input-field w-full px-4 py-4 rounded-xl text-center text-lg font-black border-rose-500/30 focus:border-rose-500 shadow-[inset_0_0_10px_rgba(244,63,94,0.5)]">
                             </div>
@@ -233,14 +233,14 @@
                             </div>
 
                             <div class="relative flex-1 group">
-                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-emerald-500 uppercase tracking-tighter z-10">Entra</span>
+                                <span class="absolute -top-2 left-3 px-1 bg-[#161f31] text-[8px] font-bold text-emerald-500 uppercase tracking-tighter z-10">In</span>
                                 <input type="number" id="substitution_player_in" placeholder="00" 
                                     class="input-field w-full px-4 py-4 rounded-xl text-center text-lg font-black border-emerald-500/30 focus:border-emerald-500 shadow-[inset_0_0_10px_rgba(16,173,123,0.5)]">
                             </div>
                         </div>
 
                         <button onclick="submitSubstitution()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-blue-900/40 border border-white/10">
-                            Substituição
+                            Substitution
                         </button>
                     </div>
                 </div>
@@ -252,20 +252,38 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
-                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Golo</h4>
+                            <h4 class="text-xs font-bold uppercase tracking-wide text-slate-400">Goal</h4>
                         </div>
-                        <input type="number" id="goal-player" placeholder="Nº Marcador" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
-                        <button onclick="submitGoal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-emerald-900/20">Golo!</button>
+                        <input type="number" id="goal-player" placeholder="Player Number" class="input-field w-full px-4 py-3 rounded-xl text-center text-sm font-bold">
+                        <button onclick="submitGoal()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-emerald-900/20">Goal!</button>
                     </div>
                 </div>
 
             </div>
         </div>
 
+        <!-- Addvert Panel -->
+        <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-700/50">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Add Launcher</h3>
+                </div>
+                
+                <a href="/setup-adds" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                    <span>🤑</span>
+                </a>
+            </div>
+            
+            <!-- Dynamic Launcher Buttons Container -->
+            <div id="launcher-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
+                <p id="no-launchers-msg" class="text-slate-500 text-xs col-span-full text-center py-4">Loading advertisements...</p>
+            </div>
+        </div>
+
         <!-- Formation Card -->
         <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
             <div class="flex items-center gap-2 mb-3">
-                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Plantel</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Lineup</h3>
             </div>
             <div class="main-container items-stretch grid grid-cols-2">
                 <button onclick="submitFormation('team1')" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-slate-900/40 border border-white/10">
@@ -284,13 +302,13 @@
                 <div class="glass rounded-lg px-6 py-4 flex items-center gap-4 text-left">
                     <div>
                         <p class="mb-1">
-                            <span class="text-slate-300 font-semibold">Acesso em Smartphone</span> 
+                            <span class="text-slate-300 font-semibold">Smartphone Access</span> 
                         </p>
                         <p class="text-xs font-mono text-green-400 mb-2">
                             http://{{ local_ip }}:{{ port }}
                         </p>
                         <p class="text-[10px] text-slate-500 max-w-[120px] leading-tight">
-                            Digitaliza o código QR para abrir no telemóvel.
+                            Scan to open interface on mobile.
                         </p>
                     </div>
                     <div class="bg-white p-1 rounded-md shadow-lg">
@@ -304,7 +322,7 @@
                         <span class="text-slate-500">v{{ app_version }}</span>
                     </p>
                     <p class="text-xs">
-                        Desenvolvido por <span class="text-green-400">Diogo Aleixo</span>
+                        Developed by <span class="text-green-400">Diogo Aleixo</span>
                     </p>
                 </div>
 
@@ -336,6 +354,9 @@
         let lastTimerUpdate = 0;
         let localTimerInterval = null;
         let clockOffset = 0;
+
+        // Advertisement state
+        let launcherAdverts = [];
 
 
         function formatTime(s) {
@@ -514,6 +535,75 @@
             }
         }
 
+        async function fetchLauncherAdverts() {
+            try {
+                const res = await fetch('/setup-adds/data');
+                if (!res.ok) throw new Error('Failed to fetch adverts');
+                
+                const adverts = await res.json();
+                
+                // Filter only Launcher action adverts
+                launcherAdverts = adverts.filter(ad => ad.action === 'Launcher');
+                
+                renderLauncherButtons();
+            } catch (e) {
+                console.error('Error fetching adverts:', e);
+                document.getElementById('no-launchers-msg').innerText = 'Error loading advertisements';
+            }
+        }
+
+        function renderLauncherButtons() {
+            const container = document.getElementById('launcher-buttons-container');
+            
+            if (launcherAdverts.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs col-span-full text-center py-4">No launcher advertisements configured</p>';
+                return;
+            }
+            
+            container.innerHTML = launcherAdverts.map(ad => `
+                <button 
+                    onclick="triggerAdvert(${ad.id})" 
+                    class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white py-3 px-4 rounded-xl text-xs sm:text-sm font-bold uppercase transition-all active:scale-95 shadow-lg shadow-amber-900/30 border border-amber-500/20 truncate"
+                    title="${ad.sponsor ? ad.sponsor + ' - ' : ''}${ad.name}"
+                >
+                    ${ad.name}
+                </button>
+            `).join('');
+        }
+
+        async function triggerAdvert(advertId) {
+            const advert = launcherAdverts.find(ad => ad.id === advertId);
+            if (!advert) {
+                console.error('Advert not found:', advertId);
+                return;
+            }
+            
+            try {
+                const res = await fetch('/add-events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'advert',
+                        advert_id: advert.id,
+                        name: advert.name,
+                        sponsor: advert.sponsor,
+                        duration: advert.duration,
+                        imagePath: advert.imagePath
+                    })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    console.log('Advert triggered successfully:', advert.name);
+                } else {
+                    alert('Erro ao lançar anúncio: ' + (data.error || 'Unknown error'));
+                }
+            } catch (e) {
+                console.error('Error triggering advert:', e);
+                alert('Erro de conexão ao lançar anúncio');
+            }
+        }
+
         async function sync() {
             try {
                 const res = await fetch('/state');
@@ -574,6 +664,7 @@
         setInterval(sync, 1000);
         sync();
         selectTeam('team1');
+        fetchLauncherAdverts();
     </script>
 </body>
 </html>

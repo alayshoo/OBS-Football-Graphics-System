@@ -286,19 +286,19 @@ body {
 /* ===========================
    TABLES
    =========================== */
-.players-table {
+.table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
 
-.players-table thead {
+.table thead {
   background: rgba(15, 23, 42, 0.8);
   border-bottom: 2px solid var(--border-light);
 }
 
-.players-table th {
+.table th {
   padding: 0.5rem 0.75rem;
   text-align: left;
   font-weight: 600;
@@ -309,52 +309,61 @@ body {
   border-right: 1px solid var(--border-faint);
 }
 
-.players-table th:last-child {
+.table th:last-child {
   border-right: none;
 }
 
-.players-table tr {
+.table tr {
   border-bottom: 1px solid var(--border-faint);
 }
 
-.players-table tbody tr:hover {
+.table tbody tr:hover {
   background: rgba(56, 189, 248, 0.08);
 }
 
-.players-table td {
+.table td {
   padding: 0.25rem 0.75rem;
   border-right: 1px solid var(--border-faint);
 }
 
-.players-table td:last-child {
+.table td:last-child {
   border-right: none;
 }
 
-.players-table .input-field {
+.table .input-field {
   background: transparent;
   border: 1px solid transparent;
   padding: 0.35rem 0.5rem;
   font-size: 0.9rem;
 }
 
-.players-table .input-field:focus {
+.table .input-field:focus {
   background: var(--glass-input);
   border-color: var(--accent-blue);
   box-shadow: inset 0 0 0 1px var(--accent-blue);
 }
 
-.players-table .input-field.error {
+.table .input-field.error {
   background: rgba(127, 29, 29, 0.4);
   border-color: var(--accent-red);
   box-shadow: inset 0 0 0 1px var(--accent-red);
 }
 
-.players-table .input-number {
+.table .input-number {
   width: 60px;
   text-align: center;
 }
 
-.players-table .btn-danger {
+.table .btn-secondary {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 0.25rem 0.35rem;
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.table .btn-danger {
   background: transparent;
   border: 1px solid transparent;
   color: #fca5a5;
@@ -363,7 +372,7 @@ body {
   box-sizing: border-box;
 }
 
-.players-table .btn-danger:hover {
+.table .btn-danger:hover {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
@@ -484,4 +493,180 @@ body {
 .save-section .btn {
   padding: 0.875rem 2rem;
   font-size: 1rem;
+}
+
+/* ===========================
+   MODAL STYLES
+   =========================== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+    background: var(--glass);
+    backdrop-filter: var(--blur);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    margin: 5% auto;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* ===========================
+   UPLOAD AREA
+   =========================== */
+.upload-area {
+    border: 2px dashed var(--border-light);
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.upload-placeholder {
+    padding: 1rem;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.upload-placeholder p {
+    margin: 0.5rem 0;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.upload-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted) !important;
+    font-weight: 400 !important;
+}
+
+.image-preview {
+    padding: 1rem;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ===========================
+   PROGRESS BAR
+   =========================== */
+.upload-progress {
+    margin-top: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#progressText {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ===========================
+   ANIMATIONS
+   =========================== */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

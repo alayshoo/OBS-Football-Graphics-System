@@ -7,10 +7,11 @@
     <title>Modern Stream Scoreboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
     <!-- Scoreboard -->
-    <link rel="stylesheet" href="/css/scoreboard.css">
-    <link rel="stylesheet" href="/css/scoreboard_event.css">
+    <link rel="stylesheet" href="css/scoreboard.css">
+    <link rel="stylesheet" href="css/scoreboard_event.css">
+    <link rel="stylesheet" href="css/scoreboard_ad.css">
     <!-- Formation Overlay -->
-    <link rel="stylesheet" href="/css/formation.css">
+    <link rel="stylesheet" href="css/formation.css">
     <style>
         :root {
             --bg-dark: rgba(15, 15, 15, 0.95);
@@ -107,7 +108,11 @@
         </div>
     </div>
 
-    <img src="/BrigantiaLogo.svg"
+    <div class="ad-container" id="ad-container">
+        <div class="ad-content" id="ad-content"></div>
+    </div>
+
+    <img src="/Logo.svg"
         style="position: absolute; top: 38px; right: 50px; height: 100px; width: 300px; object-fit: contain; filter: drop-shadow(0 0px 5px rgba(0,0,0,0.4));" />
 
     <script>
@@ -129,10 +134,17 @@
             substitution: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>`
         };
 
+        // Event system
         let lastEventIds = new Set();
         let eventQueue = [];
         let isShowingEvent = false;
         let currentState = {};
+
+        // Add system
+        let lastAdEventIds = new Set();
+        let adQueue = [];
+        let isShowingAd = false;
+        let currentAdTimeout = null;
 
         // Timer state
         let timerAnchor = null;
@@ -535,6 +547,124 @@
             }, 10000);
         }
 
+        async function checkAdEvents() {
+            try {
+                const res = await fetch('/add-events?t=' + Date.now());
+                const events = await res.json();
+
+                events.forEach(event => {
+                    if (!lastAdEventIds.has(event.id)) {
+                        lastAdEventIds.add(event.id);
+                        adQueue.push(event);
+                    }
+                });
+
+                if (adQueue.length > 0 && !isShowingAd) {
+                    showNextAd();
+                }
+            } catch (e) {
+                console.error("Ad event check error:", e);
+            }
+        }
+
+        function showNextAd() {
+            if (adQueue.length === 0) {
+                isShowingAd = false;
+                return;
+            }
+
+            isShowingAd = true;
+            const adEvent = adQueue.shift();
+            displayAd(adEvent);
+        }
+
+        function displayAd(adEvent) {
+            const container = document.getElementById('ad-container');
+            const content = document.getElementById('ad-content');
+
+            if (!container || !content) {
+                console.error("Ad container not found");
+                isShowingAd = false;
+                showNextAd();
+                return;
+            }
+
+            // Clear any existing timeout
+            if (currentAdTimeout) {
+                clearTimeout(currentAdTimeout);
+                currentAdTimeout = null;
+            }
+
+            // Determine if it's a video or image
+            const imagePath = adEvent.imagePath || '';
+            const isVideo = imagePath.toLowerCase().endsWith('.webm');
+            const duration = (adEvent.duration || 10) * 1000; // Convert to milliseconds
+
+            // Create media element
+            if (isVideo) {
+                const video = document.createElement('video');
+                video.className = 'ad-media-video';
+                video.autoplay = true;
+                video.muted = true;
+                video.playsinline = true;
+                video.loop = true;
+                
+                const source = document.createElement('source');
+                source.src = `/${imagePath}`;
+                source.type = 'video/webm';
+                video.appendChild(source);
+                
+                content.innerHTML = '';
+                content.appendChild(video);
+
+                // Wait for video to be ready
+                video.addEventListener('loadeddata', onMediaLoaded, { once: true });
+                video.addEventListener('error', onMediaError, { once: true });
+            } else {
+                const img = document.createElement('img');
+                img.className = 'ad-media';
+                img.src = `/${imagePath}`;
+                img.alt = adEvent.name || 'Advertisement';
+
+                content.innerHTML = '';
+                content.appendChild(img);
+
+                // Wait for image to load
+                img.addEventListener('load', onMediaLoaded, { once: true });
+                img.addEventListener('error', onMediaError, { once: true });
+            }
+
+            function onMediaLoaded() {
+                // Now that media is loaded, show the ad (slide up)
+                setTimeout(() => {
+                    container.classList.add('show');
+                }, 50);
+
+                // Hide after duration (slide down)
+                currentAdTimeout = setTimeout(() => {
+                    container.classList.remove('show');
+
+                    // Clean up and show next ad after animation
+                    setTimeout(() => {
+                        content.innerHTML = '';
+                        isShowingAd = false;
+                        showNextAd();
+                    }, 600); // Match CSS transition duration
+                }, duration);
+            }
+
+            function onMediaError() {
+                console.error("Failed to load ad media:", imagePath);
+                // Skip to next ad if this one fails
+                if (currentAdTimeout) {
+                    clearTimeout(currentAdTimeout);
+                }
+                content.innerHTML = '';
+                isShowingAd = false;
+                showNextAd();
+            }
+        }
+
         function updateScore(id, val) {
             const el = document.getElementById(id);
             if (el.innerText !== String(val)) {
@@ -553,8 +683,10 @@
         // Sync with server less frequently
         setInterval(refresh, 2000);
         setInterval(checkEvents, 1000);
+        setInterval(checkAdEvents, 1000);
         refresh();
         checkEvents();
+        checkAdEvents();
     </script>
 </body>
 

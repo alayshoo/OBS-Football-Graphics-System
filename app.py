@@ -1,5 +1,7 @@
-from flask import Flask, render_template, render_template_string, jsonify, send_file, request
+from flask import Flask, render_template, render_template_string, jsonify, send_file, send_from_directory, request, redirect, url_for
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
+import uuid
 import threading
 import webbrowser
 import time
@@ -12,7 +14,7 @@ import json
 import csv
 from collections import deque
 
-app_version = "0.8.4"
+app_version = "0.9.0"
 
 # Shared global state
 game_state = {
@@ -47,6 +49,8 @@ settings_state = {
 # Event notifications (stores last 50 events)
 event_queue = deque(maxlen=50)
 event_counter = 0
+ad_event_queue = deque(maxlen=20)
+ad_event_counter = 0
 
 app = Flask(
     __name__,
@@ -55,6 +59,17 @@ app = Flask(
     static_url_path=''
 )
 CORS(app)
+
+# Image upload system for addverts
+UPLOAD_FOLDER = 'static/advertisements'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'webm'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+def allowed_file(filename):
+    """Check if file extension is allowed"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_local_ip():
     try:
@@ -103,6 +118,77 @@ def save_settings(settings):
         print(f"Error saving settings: {e}")
         return False
 
+def load_adverts():
+    """Load advertisements database from file"""
+    default = {
+        'adverts': [],
+        'next_id': 1
+    }
+    
+    if os.path.exists('advertisements_database.json'):
+        try:
+            with open('advertisements_database.json', 'r', encoding='utf-8') as f:
+                saved = json.load(f)
+                default.update(saved)
+        except Exception as e:
+            print(f"Error loading adverts: {e}")
+    
+    return default
+
+def save_adverts(adverts_data):
+    """Save advertisements database to file"""
+    try:
+        with open('advertisements_database.json', 'w', encoding='utf-8') as f:
+            json.dump(adverts_data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error saving adverts: {e}")
+        return False
+
+def trigger_associated_ads(event_type, card_type=None):
+    """Trigger any ads associated with the given event type"""
+    global ad_event_counter
+
+    # Map event types to ad action names
+    action_map = {
+        'goal': 'Goal',
+        'substitution': 'Substitution',
+    }
+
+    # Handle card types separately
+    if event_type == 'card':
+        if card_type == 'red':
+            target_action = 'Red Card'
+        else:
+            target_action = 'Yellow Card'
+    else:
+        target_action = action_map.get(event_type)
+
+    if not target_action:
+        return
+
+    # Load advertisements and find matching ones
+    adverts_data = load_adverts()
+    matching_ads = [
+        ad for ad in adverts_data.get('adverts', [])
+        if ad.get('action') == target_action and ad.get('imagePath')
+    ]
+
+    # Create ad events for each matching advertisement
+    for ad in matching_ads:
+        ad_event_counter += 1
+        ad_event = {
+            'id': ad_event_counter,
+            'type': 'advert',
+            'advert_id': ad.get('id'),
+            'name': ad.get('name', ''),
+            'sponsor': ad.get('sponsor', ''),
+            'duration': ad.get('duration', 10),
+            'imagePath': ad.get('imagePath', ''),
+            'timestamp': time.time()
+        }
+        ad_event_queue.append(ad_event)
+
 # Routes
 
 @app.route('/')
@@ -149,6 +235,207 @@ def get_setup_data():
     """Load all setup data"""
     settings = load_settings()
     return jsonify(settings)
+
+@app.route('/setup-adds')
+def setup_adds():
+    return render_template('setup_adds.html')
+
+@app.route('/setup-adds/data', methods=['GET'])
+def get_setup_adds_data():
+    """ Gets all add database """
+    adverts_data = load_adverts()
+    return jsonify(adverts_data['adverts'])
+
+@app.route('/setup-adds/data', methods=['POST'])
+def post_new_add():
+    """ Creates a new add """
+    data = request.json
+    
+    # Load current database
+    adverts_data = load_adverts()
+    
+    # Create new advert with auto-incremented ID
+    new_advert = {
+        'id': adverts_data['next_id'],
+        'name': data.get('name', ''),
+        'sponsor': data.get('sponsor', ''),
+        'action': data.get('action', 'Launcher'),
+        'duration': data.get('duration', 10),
+        'imagePath': data.get('imagePath', '')
+    }
+    
+    # Add to database
+    adverts_data['adverts'].append(new_advert)
+    adverts_data['next_id'] += 1
+    
+    # Save and return
+    if save_adverts(adverts_data):
+        return jsonify({'success': True, 'advert': new_advert})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save advert'}), 500
+
+@app.route('/setup-adds/data', methods=['PATCH'])
+def modify_add():
+    """ Modifies an existing add """
+    data = request.json
+    
+    advert_id = data.get('id')
+    if not advert_id:
+        return jsonify({'success': False, 'error': 'Missing advert ID'}), 400
+    
+    # Load current database
+    adverts_data = load_adverts()
+    
+    # Find and update the advert
+    found = False
+    for advert in adverts_data['adverts']:
+        if advert['id'] == advert_id:
+            # Update only provided fields
+            if 'name' in data:
+                advert['name'] = data['name']
+            if 'sponsor' in data:
+                advert['sponsor'] = data['sponsor']
+            if 'action' in data:
+                advert['action'] = data['action']
+            if 'duration' in data:
+                advert['duration'] = data['duration']
+            if 'imagePath' in data:
+                advert['imagePath'] = data['imagePath']
+            found = True
+            break
+    
+    if not found:
+        return jsonify({'success': False, 'error': 'Advert not found'}), 404
+    
+    # Save and return
+    if save_adverts(adverts_data):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save changes'}), 500
+
+@app.route('/setup-adds/data', methods=['DELETE'])
+def delete_advert():
+    """Deletes an existing add and its image"""
+    data = request.json
+    
+    advert_id = data.get('id')
+    if not advert_id:
+        return jsonify({'success': False, 'error': 'Missing advert ID'}), 400
+    
+    # Load current database
+    adverts_data = load_adverts()
+    
+    # Find the advert and get its image path
+    advert_to_delete = None
+    for advert in adverts_data['adverts']:
+        if advert['id'] == advert_id:
+            advert_to_delete = advert
+            break
+    
+    if not advert_to_delete:
+        return jsonify({'success': False, 'error': 'Advert not found'}), 404
+    
+    # Delete the image file if it exists
+    if advert_to_delete['imagePath']:
+        image_path = advert_to_delete['imagePath']
+        if os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+                print(f"Deleted image: {image_path}")
+            except Exception as e:
+                print(f"Error deleting image file: {e}")
+    
+    # Remove from database
+    adverts_data['adverts'] = [
+        advert for advert in adverts_data['adverts'] 
+        if advert['id'] != advert_id
+    ]
+    
+    # Save and return
+    if save_adverts(adverts_data):
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'error': 'Failed to save changes'}), 500
+
+@app.route('/setup-adds/upload-image', methods=['POST'])
+def upload_add_image():
+    """Upload image for an advertisement"""
+    # Check if advert_id is provided
+    if 'advert_id' not in request.form:
+        return jsonify({'success': False, 'error': 'Missing advert ID'}), 400
+    
+    advert_id = int(request.form['advert_id'])
+    
+    # Check if file is in request
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+    
+    file = request.files['image']
+    
+    # Check if file was selected
+    if file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+    
+    # Validate file type
+    if not allowed_file(file.filename):
+        return jsonify({
+            'success': False, 
+            'error': f'Invalid file type. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'
+        }), 400
+    
+    try:
+        # Load adverts database
+        adverts_data = load_adverts()
+        
+        # Find the advert
+        advert = None
+        for ad in adverts_data['adverts']:
+            if ad['id'] == advert_id:
+                advert = ad
+                break
+        
+        if not advert:
+            return jsonify({'success': False, 'error': 'Advert not found'}), 404
+        
+        # Create upload directory if it doesn't exist
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
+        # Delete old image if it exists
+        if advert['imagePath']:
+            old_image_path = advert['imagePath']
+            if os.path.exists(old_image_path):
+                try:
+                    os.remove(old_image_path)
+                except Exception as e:
+                    print(f"Error deleting old image: {e}")
+        
+        # Generate unique filename
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"ad_{advert_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        
+        # Save file
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(filepath)
+        
+        # Update advert with new image path
+        advert['imagePath'] = filepath
+        
+        # Save database
+        if save_adverts(adverts_data):
+            return jsonify({
+                'success': True, 
+                'imagePath': filepath,
+                'imageUrl': f'/{filepath}'  # URL for browser access
+            })
+        else:
+            # If save fails, delete the uploaded file
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return jsonify({'success': False, 'error': 'Failed to save changes'}), 500
+            
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/setup/data', methods=['POST'])
 def post_setup_data():
@@ -383,11 +670,71 @@ def post_event():
         event['manager'] = settings.get(manager_key, '')
 
     event_queue.append(event)
+
+    # Auto-trigger associated advertisements
+    if event_type in ['goal', 'card', 'substitution']:
+        trigger_associated_ads(event_type, data.get('card_type'))
+
     return jsonify({'success': True, 'event_id': event_counter})
 
-@app.route('/BrigantiaLogo.svg')
+@app.route('/add-events', methods=['GET'])
+def get_add_events():
+    """Returns the last 10 ad events"""
+    response = jsonify(list(ad_event_queue)[-10:])
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/add-events', methods=['POST'])
+def post_add_event():
+    global ad_event_counter
+    data = request.json
+
+    if data.get('type') != 'advert':
+        return jsonify({'success': False, 'error': 'Invalid event type'}), 400
+
+    ad_event_counter += 1
+    event = {
+        'id': ad_event_counter,
+        'type': 'advert',
+        'advert_id': data.get('advert_id'),
+        'name': data.get('name', ''),
+        'sponsor': data.get('sponsor', ''),
+        'duration': data.get('duration', 10),
+        'imagePath': data.get('imagePath', ''),
+        'timestamp': time.time()
+    }
+
+    ad_event_queue.append(event)
+    return jsonify({'success': True, 'event_id': ad_event_counter})
+
+@app.route('/static/advertisements/<path:filename>')
+def serve_advertisement(filename):
+    """Serve advertisement images from the static/advertisements folder"""
+    return send_from_directory('static/advertisements', filename)
+
+@app.route('/Logo.svg')
 def BrigantiaLogo():
-    return send_file('BrigantiaLogo.svg', mimetype='image/svg+xml')
+    return send_file('static/Logo.svg', mimetype='image/svg+xml')
+
+@app.route('/debug/files')
+def debug_files():
+    import os
+    files = {}
+    for root, dirs, filenames in os.walk('templates'):
+        for f in filenames:
+            filepath = os.path.join(root, f)
+            mtime = os.path.getmtime(filepath)
+            files[filepath] = mtime
+    return jsonify(files)
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
@@ -403,4 +750,4 @@ if __name__ == '__main__':
         ),
         daemon=True,
     ).start()
-    app.run(host='0.0.0.0', port=8246, debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=8246, debug=True, threaded=True)

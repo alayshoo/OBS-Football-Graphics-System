@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adds Setup</title>
+    <link rel="stylesheet" href="css/shared.css">
+    <style>
+        body {
+            padding: 1rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .header h1 span {
+            background: var(--gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💶 Adds <span>Setup</span></h1>
+            <p>Configure advertisement spots</p>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+
+        <div class="glass-card settings-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div class="section-title" style="align-self: center;">
+                    <span>Ad Configuration</span>
+                </div>
+                <button class="btn btn-secondary" onclick="addAdvert()"> ➕ Add Advert </button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 280px">Name</th>
+                        <th style="width: 280px">Sponsor</th>
+                        <th style="width: 200px">Action</th>
+                        <th style="width: 90px">Duration</th>
+                        <th>Image Path</th>
+                        <th style="width: 70px">Add Image</th>
+                        <th style="width: 70px">Delete</th>
+                    </tr>
+                </thead>
+                <tbody id="advertsTableBody">
+                    <tr class="empty-state">
+                        <td colspan="7">No adverts configured yet. Click "Add Advert" to get started.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Save & Control Button -->
+        <div class="glass-card save-section">
+            <a href="/control" class="btn btn-primary">
+                💾 Save & Back to Control
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Upload Image Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload Advertisement Image</h2>
+                <button class="modal-close" onclick="closeUploadModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="uploadArea">
+                    <input 
+                        type="file" 
+                        id="imageInput" 
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/webm"
+                        style="display: none;"
+                        onchange="handleFileSelect(event)"
+                    >
+                    <div class="upload-placeholder" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-icon">📁</div>
+                        <p>Click to select an image</p>
+                        <p class="upload-hint">Image optimal size: 1825 * 150 px</p>
+                        <p class="upload-hint">PNG, JPG, GIF, WEBP, WEBM (max 16MB)</p>
+                    </div>
+                    <div id="imagePreview" class="image-preview" style="display: none;">
+                        <img id="previewImg" src="" alt="Preview">
+                        <button class="btn btn-secondary btn-small" onclick="document.getElementById('imageInput').click()">
+                            Change Image
+                        </button>
+                    </div>
+                </div>
+                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Uploading...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                <button class="btn btn-primary" id="uploadBtn" onclick="uploadImage()" disabled>
+                    Upload Image
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+        let advertsData = [];
+        let addSettings = {
+            id: 0,
+            name: '',
+            duration: 10,
+            imagePath: ''
+        };
+        let currentAdvertId = null;
+        let selectedFile = null;
+
+        async function loadAdverts() {
+            try {
+                const response = await fetch('/setup-adds/data', { method: 'GET' });
+                const data = await response.json();
+                advertsData = data;
+                renderAdverts();
+            } catch (error) {
+                console.error('Error loading adverts:', error);
+                showStatus('Error loading advertisements', 'error');
+            }
+        }
+
+        function renderAdverts() {
+            const tbody = document.getElementById('advertsTableBody');
+            const data = advertsData;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr class="empty-state"><td colspan="7">No adverts configured yet. Click "Add Advert" to get started.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map((advert, index) => `
+                <tr>
+                    <td>
+                        <input
+                            type="text"
+                            class="input-field"
+                            value="${advert.name}"
+                            onchange="updateAdvert(${advert.id}, 'name', this.value)"
+                        >
+                    </td>
+                    <td>
+                        <input
+                            type="text"
+                            class="input-field"
+                            value="${advert.sponsor || ''}"
+                            onchange="updateAdvert(${advert.id}, 'sponsor', this.value)"
+                        >
+                    </td>
+                    <td>
+                        <select
+                            class="input-field"
+                            onchange="updateAdvert(${advert.id}, 'action', this.value)"
+                        >
+                            <option value="Launcher" ${advert.action === 'Launcher' ? 'selected' : ''}>Launcher</option>
+                            <option value="Goal" ${advert.action === 'Goal' ? 'selected' : ''}>Goal</option>
+                            <option value="Substitution" ${advert.action === 'Substitution' ? 'selected' : ''}>Substitution</option>
+                            <option value="Red Card" ${advert.action === 'Red Card' ? 'selected' : ''}>Red Card</option>
+                            <option value="Yellow Card" ${advert.action === 'Yellow Card' ? 'selected' : ''}>Yellow Card</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input
+                            type="number"
+                            class="input-field input-number"
+                            value="${advert.duration}"
+                            onchange="updateAdvert(${advert.id}, 'duration', this.value)"
+                        >
+                    </td>
+                    <td>
+                        ${advert.imagePath ? 
+                            `<div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <img src="/${advert.imagePath}" alt="Ad preview" style="height: 40px; border-radius: 4px;">
+                            </div>` 
+                            : '<span style="color: var(--text-muted); font-style: italic;">No image</span>'
+                        }
+                    </td>
+                    <td><button class="btn btn-secondary" onclick="addImage(${advert.id})">➕</button></td>
+                    <td><button class="btn btn-danger" onclick="deleteAdvert(${advert.id})">❌</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function addAdvert() {
+            try {
+                const response = await fetch('/setup-adds/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: '',
+                        duration: 10,
+                        imagePath: ''
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    await loadAdverts(); // Reload to get server-assigned ID
+                    showStatus('Advertisement added successfully', 'success');
+                }
+            } catch (error) {
+                console.error('Error adding advert:', error);
+                showStatus('Error adding advertisement', 'error');
+            }
+        }
+
+        function addImage(id) {
+            currentAdvertId = id;
+            selectedFile = null;
+            
+            // Reset modal
+            document.getElementById('imageInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.querySelector('.upload-placeholder').style.display = 'block';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            // Show modal
+            document.getElementById('uploadModal').style.display = 'block';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            currentAdvertId = null;
+            selectedFile = null;
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                return;
+            }
+            
+            // Validate file type
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showStatus('Invalid file type. Please select PNG, JPG, GIF, or WEBP.', 'error');
+                return;
+            }
+            
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showStatus('File too large. Maximum size is 16MB.', 'error');
+                return;
+            }
+            
+            selectedFile = file;
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.querySelector('.upload-placeholder').style.display = 'none';
+                document.getElementById('uploadBtn').disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function uploadImage() {
+            if (!selectedFile || !currentAdvertId) {
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('advert_id', currentAdvertId);
+            
+            // Show progress
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('progressFill').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Uploading...';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            try {
+                // Simulate progress (since we can't track actual upload progress easily)
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 10;
+                    if (progress <= 90) {
+                        document.getElementById('progressFill').style.width = progress + '%';
+                    }
+                }, 100);
+                
+                const response = await fetch('/setup-adds/upload-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Complete progress
+                    document.getElementById('progressFill').style.width = '100%';
+                    document.getElementById('progressText').textContent = 'Upload complete!';
+                    
+                    // Update the advert in local data
+                    const advert = advertsData.find(a => a.id === currentAdvertId);
+                    if (advert) {
+                        advert.imagePath = result.imagePath;
+                    }
+                    
+                    // Refresh the table
+                    renderAdverts();
+                    
+                    // Show success message
+                    showStatus('Image uploaded successfully!', 'success');
+                    
+                    // Close modal after short delay
+                    setTimeout(() => {
+                        closeUploadModal();
+                    }, 1000);
+                } else {
+                    document.getElementById('progressText').textContent = 'Upload failed';
+                    showStatus(result.error || 'Upload failed', 'error');
+                    document.getElementById('uploadBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                showStatus('Error uploading image', 'error');
+                document.getElementById('uploadProgress').style.display = 'none';
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('uploadModal');
+            if (event.target === modal) {
+                closeUploadModal();
+            }
+        }
+
+        async function updateAdvert(id, field, value) {
+            try {
+                const response = await fetch('/setup-adds/data', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: id,
+                        [field]: field === 'duration' ? parseInt(value) : value
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    // Update local data
+                    const advert = advertsData.find(a => a.id === id);
+                    if (advert) {
+                        advert[field] = field === 'duration' ? parseInt(value) : value;
+                    }
+                    showStatus('Advertisement updated', 'success');
+                }
+            } catch (error) {
+                console.error('Error updating advert:', error);
+                showStatus('Error updating advertisement', 'error');
+            }
+        }
+
+        async function deleteAdvert(id) {
+            if (!confirm('Are you sure you want to delete this advertisement?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/setup-adds/data', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    await loadAdverts();
+                    showStatus('Advertisement deleted', 'success');
+                }
+            } catch (error) {
+                console.error('Error deleting advert:', error);
+                showStatus('Error deleting advertisement', 'error');
+            }
+        }
+
+        loadAdverts();
+        renderAdverts();
+
+    </script>
+</body>
+</html>

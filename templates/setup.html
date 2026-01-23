@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Setup - Scoreboard System</title>
-    <link rel="stylesheet" href="/css/shared.css">
-    <link rel="stylesheet" href="/css/formation_config.css">
+    <title>Teams Setup</title>
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/formation_config.css">
     <style>
         body {
             padding: 1rem;
@@ -34,6 +34,7 @@
 
         .header h1 span {
             background: var(--gradient);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -131,7 +132,7 @@
                         <button class="btn btn-secondary" onclick="addPlayer(1)"> ➕ Add Player </button>
                     </div>
 
-                    <table class="players-table">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th style="width: 80px;">Number</th>
@@ -156,7 +157,7 @@
                         <button class="btn btn-secondary" onclick="addPlayer(2)"> ➕ Add Player </button>
                     </div>
 
-                    <table class="players-table">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th style="width: 80px;">Number</th>
@@ -397,7 +398,7 @@
                             class="btn btn-danger btn-small" 
                             onclick="removePlayer(${teamNum}, ${index})"
                         >
-                            ➖
+                            ❌
                         </button>
                     </td>
                 </tr>
