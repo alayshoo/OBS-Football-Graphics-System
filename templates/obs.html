@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Stream Scoreboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Scoreboard -->
+    <link rel="stylesheet" href="static/css/scoreboard.css">
+    <link rel="stylesheet" href="static/css/scoreboard_event.css">
+    <link rel="stylesheet" href="static/css/scoreboard_ad.css">
+    <!-- Formation Overlay -->
+    <link rel="stylesheet" href="static/css/formation.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: rgba(15, 15, 15, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --anchor-width: 160px;
+            --margin-offset: 40px;
+        }
+
+        body {
+            margin: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Lexend', sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrapper" id="scoreboard-wrapper" style="position: relative;">
+        <div class="bar-container">
+            <div class="main-bar">
+                <div id="t1-container" class="team t1-side">
+                    <div class="name" id="t1-name">TEAM ONE</div>
+                </div>
+
+                <div class="score-box">
+                    <span id="t1-score">0</span>
+                    <span>:</span>
+                    <span id="t2-score">0</span>
+                </div>
+
+                <div id="t2-container" class="team t2-side">
+                    <div class="name" id="t2-name">TEAM TWO</div>
+                </div>
+            </div>
+
+            <div class="timer-tray">
+                <div class="timer-container">
+                    <div class="time" id="timer">00:00</div>
+                </div>
+                <div id="extra-pill" class="extra-pill">+0</div>
+            </div>
+
+            <div id="event-card" class="event-card"></div>
+        </div>
+    </div>
+
+    <!-- Formation Display Overlay -->
+    <div class="formation-overlay" id="formation-overlay">
+        <div class="formation-content">
+            <!-- Info Panel (left side) -->
+            <div class="formation-info-panel" id="formation-info-panel">
+                <div class="formation-team-pill" id="formation-team-pill">
+                    <div class="formation-team-name" id="formation-team-name">TEAM NAME</div>
+                </div>
+                <div class="info-panel-content">
+                    <div class="manager-section">
+                        <div class="manager-label">Treinador</div>
+                        <div class="manager-name" id="formation-manager">Manager Name</div>
+                    </div>
+                    <div class="players-section">
+                        <div class="section-label">Titulares</div>
+                        <div id="formation-starting"></div>
+                    </div>
+                    <div class="subs-section">
+                        <div class="section-label">Suplentes</div>
+                        <div id="formation-subs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pitch (right side) -->
+            <div class="pitch-wrapper">
+                <div class="pitch-outer">
+                    <div class="pitch-container">
+                        <!-- Pitch markings -->
+                        <div class="center-line"></div>
+                        <div class="center-circle"></div>
+                        <div class="penalty-area"></div>
+                        <div class="goal-area"></div>
+
+                        <!-- Formation layer -->
+                        <div class="formation-layer" id="formation-layer">
+                            <div class="goalkeeper-position" id="formation-gk"></div>
+                            <div class="line-positions" id="formation-line1"></div>
+                            <div class="line-positions" id="formation-line2"></div>
+                            <div class="line-positions" id="formation-line3"></div>
+                            <div class="line-positions" id="formation-line4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ad-container" id="ad-container">
+        <div class="ad-content" id="ad-content"></div>
+    </div>
+
+    <img src="/Logo.svg"
+        style="position: absolute; top: 38px; right: 50px; height: 100px; width: 300px; object-fit: contain; filter: drop-shadow(0 0px 5px rgba(0,0,0,0.4));" />
+
+
+    <script>
+        // ─── Constants ───────────────────────────────────────────────────
+        const colors = {
+        Black: "#000000",
+        White: "#ffffff",
+        Red: "#ef4444",
+        Orange: "#f97316",
+        Yellow: "#facc15",
+        Green: "#22c55e",
+        Cyan: "#06b6d4",
+        Blue: "#3b82f6",
+        Purple: "#a855f7",
+        };
+
+        const eventIcons = {
+            goal: `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M480-116q-74.77 0-141.11-28.46-66.35-28.46-116.16-78.27-49.81-49.81-78.27-116.16Q116-405.23 116-480q0-75.77 28.46-141.61 28.46-65.85 78.27-115.66 49.81-49.81 116.16-78.27Q405.23-844 480-844q75.77 0 141.61 28.46 65.85 28.46 115.66 78.27 49.81 49.81 78.27 115.66Q844-555.77 844-480q0 74.77-28.46 141.11-28.46 66.35-78.27 116.16-49.81 49.81-115.66 78.27Q555.77-116 480-116Zm172.08-440.46 62.69-18.31 26.54-75.92q-30-45.93-72.93-78.39-42.92-32.46-97-49.46L506-731.69v71.92l146.08 103.31Zm-345.16-1L454-659.77v-71.92l-65.38-46.85q-54.08 17-97.12 48.96-43.04 31.96-72.04 77.89L246-574.77l60.92 17.31Zm-79.38 260.54 81.46 1.23 37.62-49.39-53.77-161.07-60.7-17.31L168-474.62q2 48.7 16.12 93.04 14.11 44.35 43.42 84.66ZM480-168q26 0 51.77-4.69 25.77-4.69 53.08-13.08l25.07-76.92-38.61-51.93H387.69l-36.84 51.93 25.07 76.92q26.16 8.39 52.12 13.08Q454-168 480-168Zm-85.85-198.61h172.47l49.53-152.24L480-614.46l-136.92 95.61 51.07 152.24Zm338.31 70.69q29.31-40.31 43.42-84.66Q790-424.92 792-473.62l-63.39-49.84-61.46 16.54-53.77 161.84L651-295.69l81.46-.23Z"/></svg>`,
+            card: `<svg fill="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
+            substitution: `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>`,
+        };
+
+        // ─── Local data caches ───────────────────────────────────────────
+        let teamsCache = {}; // keyed by team id  { 1: {name,manager,bg_color,text_color}, 2: … }
+        let playersCache = {}; // keyed by player id { 14: {id,team_id,number,name}, … }
+        let formationsCache = {}; // keyed by team id  { 1: {goalkeeper,lines}, 2: … }
+        let adsCache = {}; // keyed by ad id     { 3: {id,name,sponsor,type,duration,image_path}, … }
+
+        // ─── Queue system ────────────────────────────────────────────────
+        let eventQueue = [];
+        let isShowingEvent = false;
+
+        let adQueue = [];
+        let isShowingAd = false;
+        let currentAdTimeout = null;
+
+        // ─── Timer state ─────────────────────────────────────────────────
+        let timerAnchor = 0;
+        let timerOffset = 0;
+        let timerRunning = false;
+        let localTimerInterval = null;
+        let clockOffset = 0; // server_time - client_time
+
+        // ─── Formation state ─────────────────────────────────────────────
+        let isShowingFormation = false;
+
+        // ─── Helpers ─────────────────────────────────────────────────────
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+        }
+
+        function calculateCurrentTime() {
+            if (!timerRunning) return timerOffset;
+            const now = Date.now() / 1000 + clockOffset;
+            return timerOffset + Math.floor(now - timerAnchor);
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById("timer").innerText = formatTime(
+                calculateCurrentTime()
+            );
+        }
+
+        function startLocalTimer() {
+            if (localTimerInterval) clearInterval(localTimerInterval);
+            localTimerInterval = setInterval(updateTimerDisplay, 100);
+        }
+
+        function stopLocalTimer() {
+            if (localTimerInterval) {
+                clearInterval(localTimerInterval);
+                localTimerInterval = null;
+            }
+        }
+
+        function updateScore(id, val) {
+            const el = document.getElementById(id);
+            const prev = parseInt(el.innerText);
+            const next = parseInt(val);
+            if (prev !== next) {
+                if (next > prev) {
+                el.classList.remove("animate-score");
+                void el.offsetWidth;
+                el.classList.add("animate-score");
+                }
+                el.innerText = next;
+            }
+        }
+
+        // Resolve a player id to {number, name} from cache
+        function resolvePlayer(playerId) {
+            const p = playersCache[playerId];
+            if (p) return { number: p.number, name: p.name };
+            return { number: "?", name: "" };
+        }
+
+        // Get team display name for "team1" / "team2" strings
+        function teamDisplayName(teamKey) {
+            const id = teamKey === "team1" ? 1 : 2;
+            return teamsCache[id]?.name || teamKey.toUpperCase();
+        }
+
+        // ─── Data fetchers (HTTP – used on init & cache refresh) ─────────
+        async function fetchTeams() {
+            try {
+                const res = await fetch("/teams");
+                const data = await res.json();
+                teamsCache = {};
+                data.teams.forEach((t) => (teamsCache[t.id] = t));
+                applyTeamStyles();
+            } catch (e) {
+                console.error("Failed to fetch teams:", e);
+            }
+        }
+
+        async function fetchPlayers() {
+            try {
+                const res = await fetch("/players");
+                const data = await res.json();
+                playersCache = {};
+                data.players.forEach((p) => (playersCache[p.id] = p));
+            } catch (e) {
+                console.error("Failed to fetch players:", e);
+            }
+        }
+
+        async function fetchFormations() {
+            try {
+                const res = await fetch("/formations");
+                const data = await res.json();
+                formationsCache = {};
+                data.formations.forEach((f) => (formationsCache[f.team_id] = f));
+            } catch (e) {
+                console.error("Failed to fetch formations:", e);
+            }
+        }
+
+        async function fetchAds() {
+            try {
+                const res = await fetch("/ads");
+                const data = await res.json();
+                adsCache = {};
+                data.ads.forEach((a) => (adsCache[a.id] = a));
+            } catch (e) {
+                console.error("Failed to fetch ads:", e);
+            }
+        }
+
+        async function fetchTimerState() {
+            try {
+                const clientBefore = Date.now() / 1000;
+                const res = await fetch("/timer");
+                const state = await res.json();
+                const clientAfter = Date.now() / 1000;
+                // estimate server time at midpoint of request
+                const rtt = clientAfter - clientBefore;
+                const clientMid = clientBefore + rtt / 2;
+                if (state.server_time) {
+                clockOffset = state.server_time - clientMid;
+                }
+
+                timerAnchor = state.timer_anchor;
+                timerOffset = state.timer_offset;
+                timerRunning = state.timer_running;
+
+                if (timerRunning) {
+                startLocalTimer();
+                } else {
+                stopLocalTimer();
+                }
+                updateTimerDisplay();
+
+                // extra time pill
+                const pill = document.getElementById("extra-pill");
+                if (state.extra_time > 0) {
+                pill.innerText = `+${state.extra_time}`;
+                pill.classList.add("visible");
+                } else {
+                pill.classList.remove("visible");
+                }
+            } catch (e) {
+                console.error("Failed to fetch timer state:", e);
+            }
+        }
+
+        async function fetchScoreState() {
+            try {
+                const res = await fetch("/game_state");
+                const state = await res.json();
+                updateScore("t1-score", state.team1_score);
+                updateScore("t2-score", state.team2_score);
+            } catch (e) {
+                console.error("Failed to fetch score state:", e);
+            }
+        }
+
+        // ─── Apply team colours / names to scoreboard bar ────────────────
+        function applyTeamStyles() {
+            const t1 = teamsCache[1] || {};
+            const t2 = teamsCache[2] || {};
+
+            document.getElementById("t1-name").innerText = t1.name || "TEAM ONE";
+            document.getElementById("t2-name").innerText = t2.name || "TEAM TWO";
+
+            const t1Cont = document.getElementById("t1-container");
+            const t1Name = document.getElementById("t1-name");
+            t1Cont.style.backgroundColor = t1.bg_color || colors["Blue"];
+            t1Name.style.color = t1.text_color || colors["White"];
+
+            const t2Cont = document.getElementById("t2-container");
+            const t2Name = document.getElementById("t2-name");
+            t2Cont.style.backgroundColor = t2.bg_color || colors["Red"];
+            t2Name.style.color = t2.text_color || colors["White"];
+        }
+
+        // ─── Event card rendering ────────────────────────────────────────
+        function createEventHTML(event) {
+            const teamName = teamDisplayName(event.team);
+            let iconClass = "";
+            let typeText = "";
+            let bodyHTML = "";
+
+            if (event.type === "goal") {
+                iconClass = "goal";
+                typeText = "GOLOOO!";
+                bodyHTML = `
+                <div class="player-info">
+                    <div class="player-number">${event.player_number}</div>
+                    <div class="player-details">
+                    <div class="player-name">${event.player_name || ""}</div>
+                    </div>
+                </div>`;
+            } else if (event.type === "card") {
+                iconClass =
+                event.card_type === "yellow" ? "card-yellow" : "card-red";
+                typeText =
+                event.card_type === "yellow"
+                    ? "Cartão Amarelo"
+                    : "Cartão Vermelho";
+                bodyHTML = `
+                <div class="player-info">
+                    <div class="player-number">${event.player_number}</div>
+                    <div class="player-details">
+                    <div class="player-name">${event.player_name || ""}</div>
+                    </div>
+                </div>`;
+            } else if (event.type === "substitution") {
+                iconClass = "substitution";
+                typeText = "Substituição";
+                bodyHTML = `
+                <div class="substitution-container">
+                    <div class="player-info out">
+                    <div class="player-number">${event.player_out_number}</div>
+                    <div class="player-details">
+                        <div class="player-name">${event.player_out_name || ""}</div>
+                    </div>
+                    </div>
+                    <div class="sub-divider">
+                    <div class="sub-divider-line"></div>
+                    <div class="sub-arrow-icon">↓</div>
+                    <div class="sub-divider-line"></div>
+                    </div>
+                    <div class="player-info in">
+                    <div class="player-number">${event.player_in_number}</div>
+                    <div class="player-details">
+                        <div class="player-name">${event.player_in_name || ""}</div>
+                    </div>
+                    </div>
+                </div>`;
+            }
+
+            return `
+                <div class="event-header">
+                <div class="event-icon-large ${iconClass}">
+                    ${event.type === "card" ? eventIcons.card : eventIcons[event.type]}
+                </div>
+                <div class="event-header-text">
+                    <div class="event-type-label ${iconClass}">${typeText}</div>
+                    <div class="event-team-name">${teamName}</div>
+                </div>
+                </div>
+                <div class="event-body">${bodyHTML}</div>`;
+        }
+
+        // ─── Event queue ─────────────────────────────────────────────────
+        function enqueueEvent(event) {
+            eventQueue.push(event);
+            if (!isShowingEvent) showNextEvent();
+        }
+
+        function showNextEvent() {
+            if (eventQueue.length === 0) {
+                isShowingEvent = false;
+                return;
+            }
+            isShowingEvent = true;
+            const event = eventQueue.shift();
+            displayEvent(event);
+        }
+
+        function displayEvent(event) {
+            // Formation is handled separately
+            if (event.type === "formation") {
+                showFormation(event);
+                isShowingEvent = false;
+                showNextEvent();
+                return;
+            }
+
+            const card = document.getElementById("event-card");
+            if (!card) {
+                console.error("Event card element not found");
+                isShowingEvent = false;
+                showNextEvent();
+                return;
+            }
+
+            card.innerHTML = createEventHTML(event);
+            card.className = "event-card";
+
+            if (event.type === "goal") {
+                card.classList.add("goal");
+            } else if (event.type === "card") {
+                card.classList.add(
+                event.card_type === "yellow" ? "card-yellow" : "card-red"
+                );
+            } else if (event.type === "substitution") {
+                card.classList.add("substitution");
+            }
+
+            setTimeout(() => card.classList.add("show"), 100);
+
+            const displayDuration = (event.display_duration || 7) * 1000;
+
+            setTimeout(() => {
+                card.classList.remove("show");
+                setTimeout(() => {
+                card.innerHTML = "";
+                isShowingEvent = false;
+                showNextEvent();
+                }, 800);
+            }, displayDuration);
+        }
+
+        // ─── Resolve raw server event into display-ready event ───────────
+        function resolveEventData(raw) {
+            const resolved = { type: raw.type, team: raw.team };
+
+            if (raw.type === "goal" || raw.type === "card") {
+                const p = resolvePlayer(raw.player_id);
+                resolved.player_number = p.number;
+                resolved.player_name = p.name;
+                if (raw.type === "card") resolved.card_type = raw.card_type;
+            } else if (raw.type === "substitution") {
+                const pOut = resolvePlayer(raw.player_id_out);
+                const pIn = resolvePlayer(raw.player_id_in);
+                resolved.player_out_number = pOut.number;
+                resolved.player_out_name = pOut.name;
+                resolved.player_in_number = pIn.number;
+                resolved.player_in_name = pIn.name;
+            } else if (raw.type === "formation") {
+                // build full formation payload for display
+                const teamId = raw.team === "team1" ? 1 : 2;
+                const team = teamsCache[teamId] || {};
+                const formation = formationsCache[teamId] || {
+                goalkeeper: null,
+                lines: [[], [], [], []],
+                };
+
+                // Build roster from players cache for this team
+                const roster = Object.values(playersCache)
+                .filter((p) => p.team_id === teamId)
+                .map((p) => ({ number: p.number, name: p.name }));
+
+                resolved.team_name = team.name || "TEAM";
+                resolved.manager = team.manager || "";
+                resolved.team_bg = team.bg_color || "Blue";
+                resolved.team_text = team.text_color || "White";
+                resolved.formation = {
+                goalkeeper: formation.goalkeeper,
+                lines: formation.lines || [[], [], [], []],
+                };
+                resolved.roster = roster;
+            }
+
+            let adDuration = 7; // default in seconds
+    
+            if (raw.type === "card") {
+                const adType = raw.card_type === "yellow" ? 
+                    "Yellow Card" : "Red Card";
+                const matchingAd = Object.values(adsCache).find(
+                    (ad) => ad.type === adType && ad.image_path
+                );
+                if (matchingAd) {
+                    adDuration = matchingAd.duration || 7;
+                }
+            } else if (raw.type === "goal" || raw.type === "substitution") {
+                const typeMap = { 
+                    goal: "Goal", 
+                    substitution: "Substitution" 
+                };
+                const adType = typeMap[raw.type];
+                const matchingAd = Object.values(adsCache).find(
+                    (ad) => ad.type === adType && ad.image_path
+                );
+                if (matchingAd) {
+                    adDuration = matchingAd.duration || 7;
+                }
+            }
+            
+            resolved.display_duration = adDuration;
+            return resolved;
+        }
+
+        // ─── Ad queue ────────────────────────────────────────────────────
+        function enqueueAd(adData) {
+            adQueue.push(adData);
+            if (!isShowingAd) showNextAd();
+        }
+
+        function showNextAd() {
+            if (adQueue.length === 0) {
+                isShowingAd = false;
+                return;
+            }
+            isShowingAd = true;
+            displayAd(adQueue.shift());
+        }
+
+        function displayAd(adData) {
+            const container = document.getElementById("ad-container");
+            const content = document.getElementById("ad-content");
+
+            if (!container || !content) {
+                console.error("Ad container not found");
+                isShowingAd = false;
+                showNextAd();
+                return;
+            }
+
+            if (currentAdTimeout) {
+                clearTimeout(currentAdTimeout);
+                currentAdTimeout = null;
+            }
+
+            const imagePath = adData.image_path || "";
+            const isVideo = imagePath.toLowerCase().endsWith(".webm");
+            const duration = (adData.duration || 10) * 1000;
+
+            function onMediaLoaded() {
+                setTimeout(() => container.classList.add("show"), 50);
+                currentAdTimeout = setTimeout(() => {
+                container.classList.remove("show");
+                setTimeout(() => {
+                    content.innerHTML = "";
+                    isShowingAd = false;
+                    showNextAd();
+                }, 600);
+                }, duration);
+            }
+
+            function onMediaError() {
+                console.error("Failed to load ad media:", imagePath);
+                if (currentAdTimeout) clearTimeout(currentAdTimeout);
+                content.innerHTML = "";
+                isShowingAd = false;
+                showNextAd();
+            }
+
+            content.innerHTML = "";
+
+            if (isVideo) {
+                const video = document.createElement("video");
+                video.className = "ad-media-video";
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.loop = true;
+                const source = document.createElement("source");
+                source.src = `/${imagePath}`;
+                source.type = "video/webm";
+                video.appendChild(source);
+                content.appendChild(video);
+                video.addEventListener("loadeddata", onMediaLoaded, { once: true });
+                video.addEventListener("error", onMediaError, { once: true });
+            } else {
+                const img = document.createElement("img");
+                img.className = "ad-media";
+                img.src = `/${imagePath}`;
+                img.alt = adData.name || "Advertisement";
+                content.appendChild(img);
+                img.addEventListener("load", onMediaLoaded, { once: true });
+                img.addEventListener("error", onMediaError, { once: true });
+            }
+        }
+
+        // ─── Formation overlay ──────────────────────────────────────────
+        function createPlayerElement(number, name, bgColor, textColor) {
+            const lastName = name ? name.split(" ").pop() : "";
+            const jerseySvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" height="83px" viewBox="0 -960 960 960" width="83px" fill="${bgColor}">
+                <path d="m250-569-63 35q-14 8-29.5 4.5T136-546L67-665q-8-14-4.5-24T79-707l228-133h64q11 0 17.5 6.5T395-816v15q0 38 24 62t62 24q38 0 61.5-24t23.5-62v-15q0-11 6.5-17.5T590-840h64l228 133q13 8 16 18t-4 24l-70 119q-6 13-25 17t-30-3l-62-39v412q0 16-12 27.5T667-120H289q-16 0-27.5-11.5T250-159v-410Z"/>
+                </svg>`;
+            return `
+                <div class="player">
+                <div class="jersey-container">
+                    <div class="jersey-svg">${jerseySvg}</div>
+                    <div class="formation-player-number" style="color: ${textColor};">${number}</div>
+                </div>
+                <div class="formation-player-name">${lastName}</div>
+                </div>`;
+        }
+
+        function getPlayerNameFromRoster(roster, number) {
+            const p = roster.find((r) => String(r.number) === String(number));
+            return p ? p.name : `Player ${number}`;
+        }
+
+        function renderFormationDisplay(event) {
+            const bgColor = event.team_bg || colors["Blue"];
+            const textColor = event.team_text || colors["White"];
+            const formation = event.formation;
+            const roster = event.roster || [];
+
+            // Info panel
+            const teamPill = document.getElementById("formation-team-pill");
+            teamPill.style.backgroundColor = bgColor;
+            const teamNameEl = document.getElementById("formation-team-name");
+            teamNameEl.innerText = event.team_name || "TEAM";
+            teamNameEl.style.color = textColor;
+            document.getElementById("formation-manager").innerText =
+                event.manager || "N/A";
+
+            // Determine starting numbers
+            const startingNumbers = new Set();
+            if (formation.goalkeeper)
+                startingNumbers.add(String(formation.goalkeeper));
+            (formation.lines || []).forEach((line) =>
+                line.forEach((num) => startingNumbers.add(String(num)))
+            );
+
+            const starters = [];
+            const subs = [];
+            roster.forEach((p) => {
+                if (startingNumbers.has(String(p.number))) starters.push(p);
+                else subs.push(p);
+            });
+            starters.sort((a, b) => a.number - b.number);
+            subs.sort((a, b) => a.number - b.number);
+
+            document.getElementById("formation-starting").innerHTML = starters
+                .map(
+                (p) => `
+                <div class="roster-player starting">
+                    <div class="roster-player-number" style="color: ${bgColor};">${p.number}</div>
+                    <div class="roster-player-name">${p.name}</div>
+                </div>`
+                )
+                .join("");
+
+            document.getElementById("formation-subs").innerHTML = subs
+                .map(
+                (p) => `
+                <div class="roster-player substitute">
+                    <div class="roster-player-number" style="color: ${bgColor};">${p.number}</div>
+                    <div class="roster-player-name">${p.name}</div>
+                </div>`
+                )
+                .join("");
+
+            // Pitch: clear
+            document.getElementById("formation-gk").innerHTML = "";
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById(`formation-line${i}`);
+                el.innerHTML = "";
+                el.style.display = "none";
+            }
+
+            // Goalkeeper
+            if (formation.goalkeeper) {
+                const gkName = getPlayerNameFromRoster(roster, formation.goalkeeper);
+                document.getElementById("formation-gk").innerHTML =
+                createPlayerElement(formation.goalkeeper, gkName, bgColor, textColor);
+            }
+
+            // Lines
+            const activeLines = (formation.lines || []).filter(
+                (l) => l.length > 0
+            );
+            const positionMap = {
+                1: ["55%"],
+                2: ["38%", "68%"],
+                3: ["30%", "52%", "74%"],
+                4: ["25%", "42%", "59%", "76%"],
+            };
+            const positions = positionMap[activeLines.length] || [];
+
+            let activeIdx = 0;
+            (formation.lines || []).forEach((line, i) => {
+                if (line.length > 0) {
+                const el = document.getElementById(`formation-line${i + 1}`);
+                el.style.top = positions[activeIdx];
+                el.style.display = "flex";
+                el.innerHTML = line
+                    .map((num) => {
+                    const name = getPlayerNameFromRoster(roster, num);
+                    return createPlayerElement(num, name, bgColor, textColor);
+                    })
+                    .join("");
+                activeIdx++;
+                }
+            });
+        }
+
+        function showFormation(event) {
+            if (isShowingFormation) return;
+            isShowingFormation = true;
+
+            renderFormationDisplay(event);
+
+            const overlay = document.getElementById("formation-overlay");
+            document.body.classList.add("formation-showing");
+
+            setTimeout(() => overlay.classList.add("show"), 100);
+
+            setTimeout(() => {
+                overlay.classList.remove("show");
+                document.body.classList.remove("formation-showing");
+                setTimeout(() => (isShowingFormation = false), 1200);
+            }, 10000);
+        }
+
+        // ─── Triggered ad resolution (find ads matching an event type) ───
+        function triggerEventAds(eventType) {
+            // Map event types to ad trigger types
+            const adTypeMap = {
+                goal: "Goal",
+                substitution: "Substitution",
+                card_red: "Red Card",
+                card_yellow: "Yellow Card",
+            };
+            const adType = adTypeMap[eventType];
+            if (!adType) return;
+
+            Object.values(adsCache).forEach((ad) => {
+                if (ad.type === adType && ad.image_path) {
+                enqueueAd(ad);
+                }
+            });
+        }
+
+        // ─── Socket.IO setup ─────────────────────────────────────────────
+        const socket = io();
+
+        socket.on("connect", async () => {
+            console.log("Connected to server");
+            // Load all initial state in parallel
+            await Promise.all([
+                fetchTeams(),
+                fetchPlayers(),
+                fetchFormations(),
+                fetchAds(),
+                fetchTimerState(),
+                fetchScoreState(),
+            ]);
+        });
+
+        socket.on("disconnect", () => {
+            console.warn("Disconnected from server");
+        });
+
+        // ── Team updates ──
+        socket.on("update-teams", () => {
+            fetchTeams();
+        });
+
+        // ── Player updates ──
+        socket.on("update-players", () => {
+            fetchPlayers();
+        });
+
+        // ── Formation updates ──
+        socket.on("update-formations", () => {
+            fetchFormations();
+        });
+
+        // ── Ad list updates ──
+        socket.on("update-ads", () => {
+            fetchAds();
+        });
+
+        // ── Score updates ──
+        socket.on("add-to-score", (data) => {
+            updateScore("t1-score", data.team1_score);
+            updateScore("t2-score", data.team2_score);
+        });
+
+        socket.on("decrease-to-score", (data) => {
+            updateScore("t1-score", data.team1_score);
+            updateScore("t2-score", data.team2_score);
+        });
+
+        // ── Timer updates ──
+        socket.on("update-timer-start", () => {
+            fetchTimerState();
+        });
+
+        socket.on("update-timer-stop", () => {
+            fetchTimerState();
+        });
+
+        socket.on("update-timer", () => {
+            fetchTimerState();
+        });
+
+        socket.on("show-extra-time", (data) => {
+            const pill = document.getElementById("extra-pill");
+            const val = data["extra-time"];
+            if (val > 0) {
+                pill.innerText = `+${val}`;
+                pill.classList.add("visible");
+            } else {
+                pill.classList.remove("visible");
+            }
+        });
+
+        // ── Game events (goals, cards, substitutions, formations) ──
+        socket.on("display-event", (raw) => {
+            const resolved = resolveEventData(raw);
+            enqueueEvent(resolved);
+
+            // Also trigger any ads associated with this event type
+            if (raw.type === "card") {
+                triggerEventAds(`card_${raw.card_type}`);
+            } else {
+                triggerEventAds(raw.type);
+            }
+        });
+
+        // ── Ad display ──
+        socket.on("display-ad", (data) => {
+            const ad = adsCache[data.id];
+            if (ad && ad.image_path) {
+                enqueueAd(ad);
+            } else {
+                console.warn("Ad not found in cache or has no image:", data.id);
+            }
+        });
+
+        // ── Keep timer ticking even before connection ──
+        startLocalTimer();
+    </script>
+</body>
+
+</html>

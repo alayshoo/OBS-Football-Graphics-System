@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teams Setup</title>
-    <link rel="stylesheet" href="css/shared.css">
-    <link rel="stylesheet" href="css/formation_config.css">
+    <link rel="stylesheet" href="static/css/shared.css">
+    <link rel="stylesheet" href="static/css/formation_config.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         body {
             padding: 1rem;
@@ -44,14 +45,57 @@
             font-size: 0.95rem;
         }
 
+        .color-picker-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .color-input {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: transparent;
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: 2px solid var(--border-light);
+            border-radius: 6px;
+        }
+
+        .hex-input {
+            width: 100px;
+            font-family: monospace;
+            text-transform: uppercase;
+        }
+
     </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="header">
-            <h1>⚙️ Team <span>Setup</span></h1>
-            <p>Configure team settings and player rosters</p>
+
+        <div class="glass-card container" style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <h1 style="font-size: 1.5rem; font-weight: 800; color: white; margin: 0;">⚙️ Team Setup</h1>
+                    <div id="status-text" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; display: flex; align-items: center; background: rgba(30, 41, 59, 0.5); padding: 0.5rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(71, 85, 105, 0.5);">
+                        <span id="status-dot" class="status-dot disconnected" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 0.5rem;"></span>
+                        <span id="conn-text">Connecting...</span>
+                    </div>
+                </div>
+            
+                <a href="/control" style="padding: 0.625rem 1rem; border-radius: var(--radius); background: rgba(100, 116, 139, 0.3); border: 1px solid var(--border-light); color: var(--text); text-decoration: none; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    🔙
+                </a>
+            </div>
         </div>
 
         <div id="statusMessage" class="status-message"></div>
@@ -80,12 +124,18 @@
 
                     <div class="color-section">
                         <label class="color-label">Theme Color</label>
-                        <div class="color-grid" id="t1-bg-grid"></div>
+                        <div class="color-picker-row">
+                            <input type="color" id="t1-bg-color" class="color-input" value="#3b82f6">
+                            <input type="text" id="t1-bg-hex" class="input-field hex-input" placeholder="#3b82f6" maxlength="7">
+                        </div>
                     </div>
-
+                    
                     <div class="color-section">
                         <label class="color-label">Text Color</label>
-                        <div class="color-grid" id="t1-text-grid"></div>
+                        <div class="color-picker-row">
+                            <input type="color" id="t1-text-color" class="color-input" value="#ffffff">
+                            <input type="text" id="t1-text-hex" class="input-field hex-input" placeholder="#ffffff" maxlength="7">
+                        </div>
                     </div>
                 </div>
 
@@ -106,12 +156,18 @@
 
                     <div class="color-section">
                         <label class="color-label">Theme Color</label>
-                        <div class="color-grid" id="t2-bg-grid"></div>
+                        <div class="color-picker-row">
+                            <input type="color" id="t2-bg-color" class="color-input" value="#ef4444">
+                            <input type="text" id="t2-bg-hex" class="input-field hex-input" placeholder="#ef4444" maxlength="7">
+                        </div>
                     </div>
-
+                    
                     <div class="color-section">
                         <label class="color-label">Text Color</label>
-                        <div class="color-grid" id="t2-text-grid"></div>
+                        <div class="color-picker-row">
+                            <input type="color" id="t2-text-color" class="color-input" value="#ffffff">
+                            <input type="text" id="t2-text-hex" class="input-field hex-input" placeholder="#ffffff" maxlength="7">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -129,7 +185,6 @@
                     <div class="settings-header">
                         <span class="badge badge-blue"></span>
                         <h2 id="team1RosterTitle">Team 1 Players</h2>
-                        <button class="btn btn-secondary" onclick="addPlayer(1)"> ➕ Add Player </button>
                     </div>
 
                     <table class="table">
@@ -147,6 +202,10 @@
                         </tbody>
                     </table>
 
+                    <div style="display: flex; gap: 0.5rem; padding-top: 2rem;">
+                        <button class="btn btn-secondary" onclick="addPlayer(1)"> ➕ Add Player </button>
+                    </div>
+
                 </div>
 
                 <!-- Team 2 Roster -->
@@ -154,7 +213,6 @@
                     <div class="settings-header">
                         <span class="badge badge-red"></span>
                         <h2 id="team2RosterTitle">Team 2 Players</h2>
-                        <button class="btn btn-secondary" onclick="addPlayer(2)"> ➕ Add Player </button>
                     </div>
 
                     <table class="table">
@@ -171,6 +229,10 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <div style="display: flex; gap: 0.5rem; padding-top: 2rem;">
+                        <button class="btn btn-secondary" onclick="addPlayer(2)"> ➕ Add Player </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -228,159 +290,304 @@
                     <div class="line-positions" id="positions4"></div>
                 </div>
             </div>
-        </div>
-
-        <div class="section-divider"></div>
-
-        <!-- Save & Control Button -->
-        <div class="glass-card save-section">
-            <button class="btn btn-primary" onclick="saveAndExit()">
-                💾 Save & Back to Control
+            <button class="btn btn-primary" onclick="saveFormations()">
+                💾 Save Formation
             </button>
         </div>
+
     </div>
 
     <script>
-        const colorPalette = {
-            'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444',
-            'Orange': '#f97316', 'Yellow': '#facc15', 'Green': '#22c55e',
-            'Cyan': '#06b6d4', 'Blue': '#3b82f6', 'Purple': '#a855f7'
-        };
-
-        const checkSvg = `
-            <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
-            </svg>
-        `;
-
-        let team1Data = [];
-        let team2Data = [];
-        let currentSettings = {
-            team1_name: 'Team 1',
-            team2_name: 'Team 2',
-            team1_manager: '',
-            team2_manager: '',
-            team1_bg: 'Blue',
-            team1_text: 'White',
-            team2_bg: 'Red',
-            team2_text: 'White'
-        };
-
-        function initColorGrids() {
-            const grids = [
-                { id: 't1-bg', key: 'team1_bg' },
-                { id: 't1-text', key: 'team1_text' },
-                { id: 't2-bg', key: 'team2_bg' },
-                { id: 't2-text', key: 'team2_text' }
-            ];
-
-            grids.forEach(config => {
-                const grid = document.getElementById(`${config.id}-grid`);
-                if (!grid) return;
-
-                grid.innerHTML = '';
-                Object.entries(colorPalette).forEach(([name, hex]) => {
-                    const swatch = document.createElement('div');
-                    swatch.className = `swatch ${name === 'White' ? 'swatch-white' : ''}`;
-                    swatch.style.backgroundColor = hex;
-                    swatch.title = name;
-                    swatch.id = `swatch-${config.id}-${name}`;
-                    swatch.innerHTML = checkSvg;
-                    swatch.onclick = () => selectColor(config.key, name);
-                    grid.appendChild(swatch);
-                });
-            });
-
-            updateColorSelections();
-        }
-
-        function selectColor(key, value) {
-            currentSettings[key] = value;
-            updateColorSelections();
-        }
-
-        function updateColorSelections() {
-            Object.entries(currentSettings).forEach(([key, value]) => {
-                if (!key.includes('_bg') && !key.includes('_text')) return;
-
-                const domPart = key.replace('team', 't').replace('_', '-');
-
-                document.querySelectorAll(`[id^="swatch-${domPart}-"]`).forEach(s =>
-                    s.classList.remove('active')
-                );
-
-                const active = document.getElementById(`swatch-${domPart}-${value}`);
-                if (active) active.classList.add('active');
-            });
-        }
-
-        async function loadTeams() {
-            try {
-                const response = await fetch('/setup/data');
-                const data = await response.json();
-
-                team1Data = data.team1_roster || [];
-                team2Data = data.team2_roster || [];
-
-                currentSettings = {
-                    team1_name: data.team1_name || 'Team 1',
-                    team2_name: data.team2_name || 'Team 2',
-                    team1_manager: data.team1_manager || '',
-                    team2_manager: data.team2_manager || '',
-                    team1_bg: data.team1_bg || 'Blue',
-                    team1_text: data.team1_text || 'White',
-                    team2_bg: data.team2_bg || 'Red',
-                    team2_text: data.team2_text || 'White'
-                };
-
-                formations.team1 = data.team1_formation || {
-                    goalkeeper: '',
-                    lines: [[], [], [], []]
-                };
-                formations.team2 = data.team2_formation || {
-                    goalkeeper: '',
-                    lines: [[], [], [], []]
-                };
-
-                document.getElementById('t1-name').value = currentSettings.team1_name;
-                document.getElementById('t2-name').value = currentSettings.team2_name;
-
-                document.getElementById('t1-manager').value = currentSettings.team1_manager;
-                document.getElementById('t2-manager').value = currentSettings.team2_manager;
-
-                document.getElementById('team1RosterTitle').textContent =
-                    `${currentSettings.team1_name} Players`;
-                document.getElementById('team2RosterTitle').textContent =
-                    `${currentSettings.team2_name} Players`;
-
-                updateFormationTeamButtons();
-                updateColorSelections();
-                renderTeam(1);
-                renderTeam(2);
-                loadFormationFromState();
-            } catch (error) {
-                console.error('Failed to load teams:', error);
-                showStatus('❌ Failed to load team data', 'error');
+        // ============================================
+        // Socket.IO Connection
+        // ============================================
+        const socket = io();
+    
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            updateConnectionStatus(true);
+            loadAllData();
+        });
+    
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            updateConnectionStatus(false);
+        });
+    
+        function updateConnectionStatus(connected) {
+            const statusDot = document.getElementById('status-dot');
+            const connText = document.getElementById('conn-text');
+            
+            if (connected) {
+                statusDot.classList.remove('disconnected');
+                statusDot.classList.add('connected');
+                connText.textContent = 'Connected';
+            } else {
+                statusDot.classList.remove('connected');
+                statusDot.classList.add('disconnected');
+                connText.textContent = 'Disconnected';
             }
         }
+    
+        // ============================================
+        // State Management
+        // ============================================
+        let teams = [];
+        let players = [];
+        let formationsData = [];
+        let currentFormationTeam = 'team1';
 
-        function renderTeam(teamNum) {
-            const tbody = document.getElementById(`team${teamNum}Players`);
-            const data = teamNum === 1 ? team1Data : team2Data;
+        let currentFormationState = {
+            id: null,
+            team_id: null,
+            goalkeeper: null,
+            lines: [[], [], [], []]
+        };
+    
+        // ============================================
+        // Data Loading
+        // ============================================
+        async function loadAllData() {
+            try {
+                const [teamsRes, playersRes, formationsRes] = 
+                    await Promise.all([
+                        fetch('/teams'),
+                        fetch('/players'),
+                        fetch('/formations')
+                    ]);
 
-            if (data.length === 0) {
+                const teamsData = await teamsRes.json();
+                const playersData = await playersRes.json();
+                const formationsDataRes = await formationsRes.json();
+
+                teams = teamsData.teams || [];
+                players = playersData.players || [];
+                formationsData = formationsDataRes.formations || [];
+
+                console.log('Data loaded:', {
+                    teams: teams.length,
+                    players: players.length,
+                    formations: formationsData.length
+                });
+
+                populateUI();
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                showStatus('❌ Failed to load data', 'error');
+            }
+        }
+    
+        async function populateUI() {
+            // Populate team 1 fields
+            const team1 = teams.find(t => t.id === 1) || {};
+            document.getElementById('t1-name').value = team1.name || '';
+            document.getElementById('t1-manager').value = team1.manager || '';
+            setColorInputs('t1-bg', team1.bg_color || '#3b82f6');
+            setColorInputs('t1-text', team1.text_color || '#ffffff');
+
+            // Populate team 2 fields
+            const team2 = teams.find(t => t.id === 2) || {};
+            document.getElementById('t2-name').value = team2.name || '';
+            document.getElementById('t2-manager').value = team2.manager || '';
+            setColorInputs('t2-bg', team2.bg_color || '#ef4444');
+            setColorInputs('t2-text', team2.text_color || '#ffffff');
+
+            // Update roster titles
+            document.getElementById('team1RosterTitle').textContent =
+                `${team1.name || 'Team 1'} Players`;
+            document.getElementById('team2RosterTitle').textContent =
+                `${team2.name || 'Team 2'} Players`;
+
+            // Update formation team buttons
+            updateFormationTeamButtons();
+
+            // Render player tables
+            renderPlayers(1);
+            renderPlayers(2);
+
+
+
+            // Load formation - ensure formations exist
+            if (formationsData && formationsData.length > 0) {
+                loadFormationFromState();
+            } else {
+                // Initialize empty formation state if none exist
+                currentFormationTeam = 'team1';
+                currentFormationState = {
+                    id: null,
+                    team_id: 1,
+                    goalkeeper: null,
+                    lines: [[], [], [], []]
+                };
+                document.getElementById('team1-btn').classList.add('active');
+                document.getElementById('team2-btn').classList.remove('active');
+            }
+        }
+    
+        function setColorInputs(prefix, hexValue) {
+            const colorInput = document.getElementById(`${prefix}-color`);
+            const hexInput = document.getElementById(`${prefix}-hex`);
+            if (colorInput) colorInput.value = hexValue;
+            if (hexInput) hexInput.value = hexValue;
+        }
+    
+        function getColorValue(prefix) {
+            return document.getElementById(`${prefix}-hex`).value || 
+                   document.getElementById(`${prefix}-color`).value;
+        }
+    
+        // ============================================
+        // Socket.IO Event Listeners
+        // ============================================
+        socket.on('update-teams', loadAllData);
+        socket.on('update-players', loadAllData);
+        socket.on('update-formations', loadAllData);
+    
+        socket.on('team-modified', (data) => {
+            if (data.success) {
+                showStatus('✅ Team updated', 'success');
+            } else {
+                showStatus(`❌ ${data.error}`, 'error');
+            }
+        });
+    
+        socket.on('player-created', (data) => {
+            if (data.success) {
+                showStatus('✅ Player created', 'success');
+            } else {
+                showStatus(`❌ ${data.error}`, 'error');
+            }
+        });
+    
+        socket.on('player-modified', (data) => {
+            if (!data.success) {
+                showStatus(`❌ ${data.error}`, 'error');
+            }
+        });
+    
+        socket.on('player-deleted', (data) => {
+            if (data.success) {
+                showStatus('✅ Player deleted', 'success');
+            } else {
+                showStatus(`❌ ${data.error}`, 'error');
+            }
+        });
+    
+        socket.on('formation-modified', (data) => {
+            if (data.success) {
+                showStatus('✅ Formation updated', 'success');
+            } else {
+                showStatus(`❌ ${data.error}`, 'error');
+            }
+        });
+    
+        // ============================================
+        // Team Modification
+        // ============================================
+        function modifyTeam(teamId, field, value) {
+            const payload = { team: teamId };
+            payload[field] = value;
+            socket.emit('modify-team', payload);
+        }
+    
+        // Debounce helper for text inputs
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    
+        // Team 1 input handlers
+        const debouncedT1Name = debounce((value) => {
+            modifyTeam(1, 'name', value);
+            document.getElementById('team1RosterTitle').textContent = `${value || 'Team 1'} Players`;
+            updateFormationTeamButtons();
+        }, 500);
+    
+        const debouncedT1Manager = debounce((value) => {
+            modifyTeam(1, 'manager', value);
+        }, 500);
+    
+        // Team 2 input handlers
+        const debouncedT2Name = debounce((value) => {
+            modifyTeam(2, 'name', value);
+            document.getElementById('team2RosterTitle').textContent = `${value || 'Team 2'} Players`;
+            updateFormationTeamButtons();
+        }, 500);
+    
+        const debouncedT2Manager = debounce((value) => {
+            modifyTeam(2, 'manager', value);
+        }, 500);
+    
+        // Attach team input listeners
+        document.getElementById('t1-name').addEventListener('input', (e) => debouncedT1Name(e.target.value));
+        document.getElementById('t1-manager').addEventListener('input', (e) => debouncedT1Manager(e.target.value));
+        document.getElementById('t2-name').addEventListener('input', (e) => debouncedT2Name(e.target.value));
+        document.getElementById('t2-manager').addEventListener('input', (e) => debouncedT2Manager(e.target.value));
+    
+        // ============================================
+        // Color Input Handling
+        // ============================================
+        function setupColorInput(prefix, teamId, field) {
+            const colorInput = document.getElementById(`${prefix}-color`);
+            const hexInput = document.getElementById(`${prefix}-hex`);
+    
+            colorInput.addEventListener('input', (e) => {
+                hexInput.value = e.target.value;
+                modifyTeam(teamId, field, e.target.value);
+            });
+    
+            hexInput.addEventListener('input', (e) => {
+                let value = e.target.value;
+                // Auto-add # if missing
+                if (value && !value.startsWith('#')) {
+                    value = '#' + value;
+                    e.target.value = value;
+                }
+                // Validate hex format
+                if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    colorInput.value = value;
+                    modifyTeam(teamId, field, value);
+                }
+            });
+        }
+    
+        setupColorInput('t1-bg', 1, 'bg_color');
+        setupColorInput('t1-text', 1, 'text_color');
+        setupColorInput('t2-bg', 2, 'bg_color');
+        setupColorInput('t2-text', 2, 'text_color');
+    
+        // ============================================
+        // Player Management
+        // ============================================
+        function getPlayersForTeam(teamId) {
+            return players.filter(p => p.team_id === teamId);
+        }
+    
+        function renderPlayers(teamId) {
+            const tbody = document.getElementById(`team${teamId}Players`);
+            const teamPlayers = getPlayersForTeam(teamId);
+
+            if (teamPlayers.length === 0) {
                 tbody.innerHTML = '<tr class="empty-state"><td colspan="3">No players added yet</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = data.map((player, index) => `
-                <tr>
+            tbody.innerHTML = teamPlayers.map(player => `
+                <tr data-player-id="${player.id}">
                     <td>
                         <input 
                             type="text" 
                             class="input-field input-number" 
-                            value="${player.number}" 
-                            onchange="updatePlayer(${teamNum}, ${index}, 'number', this.value)"
+                            value="${player.number || ''}" 
+                            data-player-id="${player.id}" 
+                            data-field="number"
                             placeholder="#"
                         >
                     </td>
@@ -388,103 +595,215 @@
                         <input 
                             type="text" 
                             class="input-field" 
-                            value="${player.name}" 
-                            onchange="updatePlayer(${teamNum}, ${index}, 'name', this.value)"
+                            value="${player.name || ''}" 
+                            data-player-id="${player.id}" 
+                            data-field="name"
                             placeholder="Player Name"
                         >
                     </td>
                     <td>
                         <button 
                             class="btn btn-danger btn-small" 
-                            onclick="removePlayer(${teamNum}, ${index})"
+                            onclick="deletePlayer(${player.id})"
                         >
                             ❌
                         </button>
                     </td>
                 </tr>
             `).join('');
+            
+            // Attach event listeners to all inputs
+            attachPlayerInputListeners();
         }
 
-        function addPlayer(teamNum) {
-            const data = teamNum === 1 ? team1Data : team2Data;
-            data.push({ number: '', name: '' });
-            renderTeam(teamNum);
+        function attachPlayerInputListeners() {
+            const inputs = document.querySelectorAll(
+                '#team1Players input[data-field], #team2Players input[data-field]'
+            );
+            
+            inputs.forEach(input => {
+                // Remove old listeners by cloning
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                // Add new listener
+                newInput.addEventListener('change', function() {
+                    const playerId = parseInt(this.dataset.playerId);
+                    const field = this.dataset.field;
+                    let value = this.value.trim();
+                    
+                    // Validation
+                    if (field === 'number') {
+                        if (value) {
+                            const num = parseInt(value, 10);
+                            if (num < 1 || num > 99) {
+                                this.classList.add('error');
+                                showStatus('❌ Jersey number must be 1-99', 'error');
+                                return;
+                            }
+                            value = num;
+                        }
+                    } else if (field === 'name') {
+                        if (!value) {
+                            this.classList.add('error');
+                            showStatus('❌ Player name required', 'error');
+                            return;
+                        }
+                    }
+                    
+                    // Clear error state
+                    this.classList.remove('error');
+                    
+                    // Save to database immediately
+                    updatePlayerField(playerId, field, value);
+                });
+            });
         }
-
-        function removePlayer(teamNum, index) {
-            const data = teamNum === 1 ? team1Data : team2Data;
-            data.splice(index, 1);
-            renderTeam(teamNum);
+    
+        function addPlayer(teamId) {
+            // Check for unsaved changes
+            const tbody = document.getElementById(`team${teamId}Players`);
+            const rows = tbody.querySelectorAll('tr:not(.empty-state)');
+            
+            let hasUnsaved = false;
+            const teamPlayers = getPlayersForTeam(teamId);
+            
+            rows.forEach(row => {
+                const playerId = parseInt(
+                    row.querySelector('input[data-field="number"]').dataset.playerId
+                );
+                const player = teamPlayers.find(p => p.id === playerId);
+                
+                if (player) {
+                    const inputName = row.querySelector('input[data-field="name"]').value.trim();
+                    const inputNumber = row.querySelector('input[data-field="number"]').value;
+                    
+                    if (inputName !== (player.name || '') || 
+                        inputNumber !== String(player.number || '')) {
+                        hasUnsaved = true;
+                    }
+                }
+            });
+            
+            if (hasUnsaved) {
+                showStatus('⚠️ Please save changes before adding a player', 'warning');
+                return;
+            }
+            
+            socket.emit('create-player', { team: teamId });
         }
-
-        function updatePlayer(teamNum, index, field, value) {
-            const data = teamNum === 1 ? team1Data : team2Data;
-            data[index][field] = value;
+    
+        function updatePlayerField(playerId, field, value) {
+            const payload = { id: playerId };
+            if (field === 'number') {
+                payload.number = value ? parseInt(value, 10) : null;
+            } else {
+                payload[field] = value;
+            }
+            socket.emit('modify-player', payload);
         }
-
-        /* Pitch Script Portion Start */
-
-        /* Formation State */
-        let currentFormationTeam = 'team1';
-        let formations = {
-            team1: { goalkeeper: '', lines: [[], [], [], []] },
-            team2: { goalkeeper: '', lines: [[], [], [], []] }
-        };
-
+    
+        function deletePlayer(playerId) {
+            if (confirm('Are you sure you want to delete this player?')) {
+                socket.emit('delete-player', { id: playerId });
+            }
+        }
+    
+        // ============================================
+        // Formation Configuration
+        // ============================================
         const lineInputs = {
             1: document.getElementById('line1'),
             2: document.getElementById('line2'),
             3: document.getElementById('line3'),
             4: document.getElementById('line4')
         };
-
+    
         const positionContainers = {
             1: document.getElementById('positions1'),
             2: document.getElementById('positions2'),
             3: document.getElementById('positions3'),
             4: document.getElementById('positions4')
         };
-
+    
         const gkInput = document.getElementById('goalkeeper');
 
-        function selectTeam(team) {
-            // Save current team's formation before switching
-            saveCurrentFormationToState();
+        function syncFormationToDatabase() {
+            // Only save if there's an actual formation to save
+            if (!currentFormationState || !currentFormationState.id) {
+                return;
+            }
             
-            // Switch team
-            currentFormationTeam = team;
+            const gkValue = gkInput.value ? 
+                parseInt(gkInput.value, 10) : null;
+            const lines = [];
             
-            // Update button states
-            document.getElementById('team1-btn').classList.toggle('active', team === 'team1');
-            document.getElementById('team2-btn').classList.toggle('active', team === 'team2');
-            
-            // Load the selected team's formation
-            loadFormationFromState();
-        }
-
-        function saveCurrentFormationToState() {
-            const formation = formations[currentFormationTeam];
-            
-            // Save goalkeeper
-            formation.goalkeeper = gkInput.value;
-            
-            // Save each line
             for (let i = 1; i <= 4; i++) {
                 const container = positionContainers[i];
                 const inputs = container.querySelectorAll('input');
-                formation.lines[i - 1] = Array.from(inputs).map(input => input.value);
+                const lineValues = Array.from(inputs)
+                    .map(input => input.value ? 
+                        parseInt(input.value, 10) : null)
+                    .filter(v => v !== null);
+                lines.push(lineValues);
             }
-        }
 
+            socket.emit('modify-formation', {
+                id: currentFormationState.id,
+                goalkeeper: gkValue,
+                lines: lines
+            });
+        }
+    
+        function selectTeam(team) {
+            // Get the current team ID before switching
+            const currentTeamId = currentFormationTeam === 'team1' ? 1 : 2;
+            
+            // Only sync if we have an actual formation ID
+            if (currentFormationState && 
+                currentFormationState.id) {
+                syncFormationToDatabase();
+            }
+            
+            // Switch teams
+            currentFormationTeam = team;
+            
+            // Update button states
+            document.getElementById('team1-btn').classList
+                .toggle('active', team === 'team1');
+            document.getElementById('team2-btn').classList
+                .toggle('active', team === 'team2');
+            
+            // Load the new team's formation
+            loadFormationFromState();
+            
+            // Validate inputs for the new team
+            validateFormationInputs();
+        }
+    
+        function getCurrentFormation() {
+            const teamId = currentFormationTeam === 'team1' ? 1 : 2;
+            return formationsData.find(f => f.team_id === teamId) || { 
+                id: null, 
+                team_id: teamId, 
+                goalkeeper: null, 
+                lines: [[], [], [], []] 
+            };
+        }
+    
         function loadFormationFromState() {
-            const formation = formations[currentFormationTeam];
+            const formation = getCurrentFormation();
+            
+            // Copy database formation into local state
+            currentFormationState = JSON.parse(JSON.stringify(formation));
             
             // Load goalkeeper
-            gkInput.value = formation.goalkeeper || '';
+            gkInput.value = currentFormationState.goalkeeper || '';
             
             // Load each line
+            const lines = currentFormationState.lines || [[], [], [], []];
             for (let i = 1; i <= 4; i++) {
-                const lineData = formation.lines[i - 1] || [];
+                const lineData = lines[i - 1] || [];
                 lineInputs[i].value = lineData.length || '';
                 updateLine(i, lineData);
             }
@@ -492,7 +811,100 @@
             calculateLinePositions();
             validateFormationInputs();
         }
+    
+        function saveCurrentFormation() {
+            const formation = getCurrentFormation();
+            if (!formation.id) return;
+    
+            const gkValue = gkInput.value ? parseInt(gkInput.value, 10) : null;
+            const lines = [];
+            
+            for (let i = 1; i <= 4; i++) {
+                const container = positionContainers[i];
+                const inputs = container.querySelectorAll('input');
+                const lineValues = Array.from(inputs)
+                    .map(input => input.value ? parseInt(input.value, 10) : null)
+                    .filter(v => v !== null);
+                lines.push(lineValues);
+            }
+    
+            socket.emit('modify-formation', {
+                id: formation.id,
+                goalkeeper: gkValue,
+                lines: lines
+            });
+        }
 
+        function saveFormations() {
+            if (!currentFormationState.id) {
+                showStatus('❌ No formation to save', 'error');
+                return;
+            }
+
+            // Validate formation first
+            const errors = validateFormationBeforeSave();
+            if (errors.length > 0) {
+                showStatus(`❌ ${errors[0]}`, 'error');
+                return;
+            }
+
+            const gkValue = gkInput.value ? parseInt(gkInput.value, 10) : null;
+            const lines = [];
+            
+            for (let i = 1; i <= 4; i++) {
+                const container = positionContainers[i];
+                const inputs = container.querySelectorAll('input');
+                const lineValues = Array.from(inputs)
+                    .map(input => input.value ? parseInt(input.value, 10) : null)
+                    .filter(v => v !== null);
+                lines.push(lineValues);
+            }
+
+            socket.emit('modify-formation', {
+                id: currentFormationState.id,
+                goalkeeper: gkValue,
+                lines: lines
+            });
+        }
+
+        function validateFormationBeforeSave() {
+            const errors = [];
+            const teamId = currentFormationTeam === 'team1' ? 1 : 2;
+            const availableNumbers = getAvailablePlayerNumbers(teamId);
+            
+            const usedNumbers = new Set();
+            
+            // Check goalkeeper
+            const gkValue = gkInput.value ? parseInt(gkInput.value, 10) : null;
+            if (gkValue !== null) {
+                if (!availableNumbers.includes(gkValue)) {
+                    errors.push(`Goalkeeper number ${gkValue} not in roster`);
+                }
+                usedNumbers.add(gkValue);
+            }
+            
+            // Check all line positions
+            for (let i = 1; i <= 4; i++) {
+                const container = positionContainers[i];
+                const inputs = container.querySelectorAll('input');
+                
+                inputs.forEach(input => {
+                    const value = input.value ? parseInt(input.value, 10) : null;
+                    
+                    if (value !== null) {
+                        if (!availableNumbers.includes(value)) {
+                            errors.push(`Player number ${value} not in roster`);
+                        } else if (usedNumbers.has(value)) {
+                            errors.push(`Player number ${value} used multiple times`);
+                        }
+                        usedNumbers.add(value);
+                    }
+                });
+            }
+            
+            return errors;
+        }
+        
         function calculateLinePositions() {
             const counts = [1, 2, 3, 4].map(i => parseInt(lineInputs[i].value) || 0);
             const activeLines = counts
@@ -521,7 +933,7 @@
                 }
             });
         }
-
+    
         function updateLine(lineNumber, existingValues = []) {
             const count = parseInt(lineInputs[lineNumber].value) || 0;
             const container = positionContainers[lineNumber];
@@ -540,84 +952,85 @@
                     if (this.value.length > 2) {
                         this.value = this.value.slice(0, 2);
                     }
+                    // Update local state
+                    const lineIndex = lineNumber - 1;
+                    const inputIndex = Array.from(container.querySelectorAll('input')).indexOf(this);
+                    const value = this.value ? parseInt(this.value, 10) : null;
+                    currentFormationState.lines[lineIndex][inputIndex] = value;
                 });
 
-                input.addEventListener('change', validateFormationInputs);
-                input.addEventListener('blur', validateFormationInputs);
+                input.addEventListener('change', () => {
+                    validateFormationInputs();
+                    // DON'T SAVE HERE
+                });
                 
                 container.appendChild(input);
             }
             
             calculateLinePositions();
         }
-
-        function getAvailablePlayerNumbers(teamNum) {
-            const data = teamNum === 1 ? team1Data : team2Data;
-            return data
+    
+        function getAvailablePlayerNumbers(teamId) {
+            return getPlayersForTeam(teamId)
                 .map(player => player.number)
-                .filter(num => num && num.trim() !== '');
+                .filter(num => num !== null && num !== undefined);
         }
-
+    
         function validateFormationInputs() {
-            const teamNum = currentFormationTeam === 'team1' ? 1 : 2;
-            const availableNumbers = getAvailablePlayerNumbers(teamNum);
+            const teamId = currentFormationTeam === 'team1' ? 1 : 2;
+            const availableNumbers = getAvailablePlayerNumbers(teamId);
             
             // Clear previous error states
-            document.querySelectorAll('.input-number.error').forEach(input => {
+            document.querySelectorAll('.pitch-container .input-number.error').forEach(input => {
                 input.classList.remove('error');
             });
             
+            const usedNumbers = new Set();
+            
             // Check goalkeeper
-            const gkValue = gkInput.value;
-            if (gkValue && !availableNumbers.includes(gkValue)) {
-                gkInput.classList.add('error');
+            const gkValue = gkInput.value ? parseInt(gkInput.value, 10) : null;
+            if (gkValue !== null) {
+                if (!availableNumbers.includes(gkValue)) {
+                    gkInput.classList.add('error');
+                }
+                usedNumbers.add(gkValue);
             }
             
             // Check all line positions
-            const usedNumbers = new Set();
             for (let i = 1; i <= 4; i++) {
                 const container = positionContainers[i];
                 const inputs = container.querySelectorAll('input');
                 
                 inputs.forEach(input => {
-                    const value = input.value;
+                    const value = input.value ? parseInt(input.value, 10) : null;
                     
-                    // Check if number exists in roster
-                    const numberExists = availableNumbers.includes(value);
-                    
-                    // Check if number is duplicated
-                    const isDuplicate = usedNumbers.has(value) && value;
-                    
-                    if (value && (!numberExists || isDuplicate)) {
-                        input.classList.add('error');
-                    } else {
-                        input.classList.remove('error');
-                    }
-                    
-                    if (value) {
+                    if (value !== null) {
+                        const numberExists = availableNumbers.includes(value);
+                        const isDuplicate = usedNumbers.has(value);
+                        
+                        if (!numberExists || isDuplicate) {
+                            input.classList.add('error');
+                        }
+                        
                         usedNumbers.add(value);
                     }
                 });
             }
         }
-
-        function addValidationToLineInput(lineNumber) {
-            const input = positionContainers[lineNumber].querySelector('input:last-child');
-            if (input) {
-                input.addEventListener('change', validateFormationInputs);
-                input.addEventListener('blur', validateFormationInputs);
-            }
-        }
-
-        // Input validation for goalkeeper
+    
+        // Goalkeeper input handlers
         gkInput.addEventListener('input', function () {
             if (this.value.length > 2) {
                 this.value = this.value.slice(0, 2);
             }
+            // Update local state but don't save
+            currentFormationState.goalkeeper = this.value ? parseInt(this.value, 10) : null;
         });
-        gkInput.addEventListener('change', validateFormationInputs);
-        gkInput.addEventListener('blur', validateFormationInputs);
-
+    
+        gkInput.addEventListener('change', () => {
+            validateFormationInputs();
+        });
+    
         // Line input event listeners
         Object.keys(lineInputs).forEach(line => {
             lineInputs[line].addEventListener('input', function () {
@@ -629,89 +1042,45 @@
                 if (val > 9) this.value = '9';
                 else if (val < 0 || isNaN(val)) this.value = '0';
                 
-                updateLine(line);
+                updateLine(parseInt(line));
+                calculateLinePositions();
+                // DON'T SAVE HERE - just update UI
             });
         });
-
-        // Update team button names when team names change
+    
         function updateFormationTeamButtons() {
+            const team1 = teams.find(t => t.id === 1);
+            const team2 = teams.find(t => t.id === 2);
+            
             document.getElementById('team1-btn-name').textContent =
-                document.getElementById('t1-name').value || 'Team 1';
+                team1?.name || document.getElementById('t1-name').value || 'Team 1';
             document.getElementById('team2-btn-name').textContent =
-                document.getElementById('t2-name').value || 'Team 2';
+                team2?.name || document.getElementById('t2-name').value || 'Team 2';
         }
-
-        document.getElementById('t1-name').addEventListener('input', updateFormationTeamButtons);
-        document.getElementById('t2-name').addEventListener('input', updateFormationTeamButtons);
-
-        /* Pitch Script Portion End */
-
-        async function saveAll() {
-            saveCurrentFormationToState();
-
-            currentSettings.team1_name = document.getElementById('t1-name').value;
-            currentSettings.team2_name = document.getElementById('t2-name').value;
-            currentSettings.team1_manager = document.getElementById('t1-manager').value;
-            currentSettings.team2_manager = document.getElementById('t2-manager').value;
-
-            try {
-                const response = await fetch('/setup/data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ...currentSettings,
-                        team1_formation: formations.team1,
-                        team2_formation: formations.team2,
-                        team1_roster: team1Data,
-                        team2_roster: team2Data
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showStatus('✅ All changes saved successfully!', 'success');
-
-                    document.getElementById('team1RosterTitle').textContent =
-                        `${currentSettings.team1_name} Players`;
-                    document.getElementById('team2RosterTitle').textContent =
-                        `${currentSettings.team2_name} Players`;
-
-                    return true;
-                } else {
-                    showStatus('❌ Failed to save changes', 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Failed to save:', error);
-                showStatus('❌ Failed to save changes', 'error');
-                return false;
-            }
+    
+        // ============================================
+        // Navigation
+        // ============================================
+        function saveAndExit() {
+            showStatus('✅ All changes saved!', 'success');
+            setTimeout(() => {
+                window.location.href = '/control';
+            }, 500);
         }
-
-        async function saveAndExit() {
-            const success = await saveAll();
-            if (success) {
-                setTimeout(() => {
-                    window.location.href = '/control';
-                }, 500);
-            }
-        }
-
+    
+        // ============================================
+        // Status Messages
+        // ============================================
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
             statusEl.className = `status-message ${type}`;
             statusEl.style.display = 'block';
-
+    
             setTimeout(() => {
                 statusEl.style.display = 'none';
             }, 3000);
         }
-
-        // Initialize on page load
-        initColorGrids();
-        loadTeams();
     </script>
 </body>
 

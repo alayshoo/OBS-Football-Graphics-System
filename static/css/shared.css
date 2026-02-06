@@ -381,19 +381,29 @@ body {
    STATUS MESSAGES & STATES
    =========================== */
 .status-message {
-  text-align: center;
-  padding: 1rem;
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  padding: 0.75rem 1rem;
   border-radius: var(--radius);
-  margin-bottom: 1.5rem;
   font-weight: 600;
   display: none;
-  animation: slideDown 0.3s ease;
+  animation: slideIn 0.3s ease;
+  z-index: 9999;
+  max-width: 300px;
+  font-size: 0.875rem;
 }
 
 .status-message.success {
   background: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
   border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-message.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
 }
 
 .status-message.error {
@@ -410,6 +420,17 @@ body {
   font-size: 0.9rem;
 }
 
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -419,6 +440,24 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.status-dot { 
+  width: 8px; 
+  height: 8px; 
+  border-radius: 50%; 
+  display: inline-block; 
+  margin-right: 6px; 
+}
+
+.connected { 
+  background-color: #10b981; 
+  box-shadow: 0 0 8px #10b981; 
+}
+
+.disconnected { 
+  background-color: #ef4444; 
+  box-shadow: 0 0 8px #ef4444; 
 }
 
 /* ===========================

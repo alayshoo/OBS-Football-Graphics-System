@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scoreboard Pro Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/shared.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="static/css/shared.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap');
         
@@ -13,6 +14,7 @@
             background-color: #0f172a; 
             font-family: 'Inter', sans-serif; 
             color: #f8fafc; 
+            padding-bottom: 240px;
         }
         
         .timer-font { 
@@ -47,6 +49,13 @@
         .main-container {
             display: grid;
             gap: 1rem;
+        }
+
+        @media (max-width: 639px) {
+            .obs-grid-area {
+                max-height: 280px;
+                overflow-y: auto;
+            }
         }
         
         @media (max-width: 767px) {
@@ -88,6 +97,15 @@
             appearance: none;
             -moz-appearance: textfield;
         }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
     </style>
 </head>
 <body class="min-h-screen p-2 sm:p-4 md:p-6 flex flex-col items-center justify-center">
@@ -268,10 +286,6 @@
                 <div class="flex items-center gap-2 sm:gap-4">
                     <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Add Launcher</h3>
                 </div>
-                
-                <a href="/setup-adds" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
-                    <span>🤑</span>
-                </a>
             </div>
             
             <!-- Dynamic Launcher Buttons Container -->
@@ -292,6 +306,21 @@
                 <button onclick="submitFormation('team2')" class="w-full bg-slate-600 hover:bg-slate-500 text-white py-3 rounded-xl text-[0.65rem] font-black uppercase transition-all active:scale-95 shadow-lg shadow-slate-900/40 border border-white/10">
                     <span id="team2-formation-btn-name">Team 2</span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Settings Card -->
+        <div class="glass-card w-full max-w-5xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div class="flex items-center gap-2 mb-3">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-slate-400">Settings</h3>
+            </div>
+            <div class="main-container items-stretch grid grid-cols-2">
+                <a href="/setup-ads" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                    <span>Setup Ads 🤑</span>
+                </a>
+                <a href="/setup-ads" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                    <span>Setup OBS Commands ⚙️</span>
+                </a>
             </div>
         </div>
 
@@ -331,88 +360,103 @@
 
     </div>
 
+    <!-- OBS Command Floating Bar -->
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-700/50 px-4 py-4 sm:px-6 sm:py-5 shadow-[0_-4px_30px_rgba(0,0,0,0.5)] h-fit">
+        <div class="max-w-7xl mx-auto">
+            <div id="obs-command-bar-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                <p class="text-slate-500 text-sm col-span-2 sm:col-span-4">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spacer to prevent content overlap -->
+    <div class="h-32 sm:h-40"></div>
+
     <script>
+
         const colorPalette = {
             'Black': '#000000', 'White': '#ffffff', 'Red': '#ef4444', 
             'Orange': '#f97316', 'Yellow': '#facc15', 'Green': '#22c55e', 
             'Cyan': '#06b6d4', 'Blue': '#3b82f6', 'Purple': '#a855f7'
         };
 
-        const checkSvg = `
-            <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path>
-            </svg>
-        `;
+        const socket = io();
 
-        let currentState = {};
-        let selectedTeam = 'team1';
-        
         // Timer state
-        let timerAnchor = null;
+        let timerAnchor = 0;
         let timerOffset = 0;
         let timerRunning = false;
-        let lastTimerUpdate = 0;
+        let extraTime = 0;
         let localTimerInterval = null;
-        let clockOffset = 0;
 
-        // Advertisement state
+        // Score state
+        let scoreState = { team1_score: 0, team2_score: 0 };
+
+        // UI state
         let launcherAdverts = [];
+        let selectedTeam = 'team1';
 
+        // Player lookup - maps player number to player ID for each team
+        let playerLookup = {
+            'team1': {},
+            'team2': {}
+        };
+        let allPlayers = [];
+
+        let obsCommands = [];
+
+        // --- Utility Functions ---
 
         function formatTime(s) {
-            const m = Math.floor(s/60);
+            const m = Math.floor(s / 60);
             const sec = s % 60;
-            return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
         }
 
         function calculateCurrentTime() {
-            if (!timerRunning) {
-                return timerOffset;
-            }
-            const now = Date.now() / 1000 + clockOffset;
-            const elapsed = Math.floor(now - timerAnchor);
-            return timerOffset + elapsed;
+            if (!timerRunning) return timerOffset;
+            const now = Date.now() / 1000;
+            return timerOffset + Math.floor(now - timerAnchor);
         }
 
         function updateTimerDisplay() {
-            const seconds = calculateCurrentTime();
-            document.getElementById('timer').innerText = formatTime(seconds);
+            document.getElementById('timer').innerText = formatTime(calculateCurrentTime());
         }
 
         function startLocalTimer() {
-            if (localTimerInterval) {
-                clearInterval(localTimerInterval);
-            }
+            if (localTimerInterval) clearInterval(localTimerInterval);
             localTimerInterval = setInterval(updateTimerDisplay, 100);
         }
 
-        async function update(key, value) {
-            try {
-                await fetch('/state', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({[key]: value})
-                });
-                if (key == 'extra_time') {
-                    document.getElementById('extra-time-input').value = '';
-                }
-                else if (key == 'set_time') {
-                    document.getElementById('set-time-input').value = '';
-                }
-            } catch(e) { console.error(e); }
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('conn-text');
+            dot.classList.toggle('connected', connected);
+            dot.classList.toggle('disconnected', !connected);
+            text.innerText = connected ? 'Connected' : 'Disconnected';
         }
 
-        async function changeScore(teamKey, delta) {
-            const newVal = Math.max(0, (currentState[teamKey] || 0) + delta);
-            update(teamKey, newVal);
+        function updateScoreDisplay() {
+            document.getElementById('t1-score-val').innerText = scoreState.team1_score;
+            document.getElementById('t2-score-val').innerText = scoreState.team2_score;
         }
 
-        async function timerAction(action) {
-            await fetch('/state', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({timer_action: action})
-            });
+        function updateTeamDisplay(teams) {
+            const team1 = teams.find(t => t.id === 1);
+            const team2 = teams.find(t => t.id === 2);
+
+            if (team1) {
+                document.getElementById('t1-display-name').innerText = team1.name || 'TEAM 1';
+                document.getElementById('t1-display-dot').style.backgroundColor = team1.bg_color || '#3b82f6';
+                document.getElementById('team1-btn-name').innerText = team1.name || 'Team 1';
+                document.getElementById('team1-formation-btn-name').innerText = team1.name || 'Team 1';
+            }
+            if (team2) {
+                document.getElementById('t2-display-name').innerText = team2.name || 'TEAM 2';
+                document.getElementById('t2-display-dot').style.backgroundColor = team2.bg_color || '#f43f5e';
+                document.getElementById('team2-btn-name').innerText = team2.name || 'Team 2';
+                document.getElementById('team2-formation-btn-name').innerText = team2.name || 'Team 2';
+            }
         }
 
         function selectTeam(team) {
@@ -421,250 +465,317 @@
             document.getElementById('team2-btn').classList.toggle('active', team === 'team2');
         }
 
-        async function submitCard(cardType) {
-            const player = document.getElementById('card-player').value;
-            if (!player) {
-                alert('Por favor insira o número do jogador');
-                return;
-            }
+        function buildPlayerLookup() {
+            playerLookup = { 'team1': {}, 'team2': {} };
+            allPlayers.forEach(player => {
+                const teamKey = player.team_id === 1 ? 'team1' : 'team2';
+                playerLookup[teamKey][player.number] = player.id;
+            });
+        }
 
+        function getPlayerIdByNumber(teamKey, playerNumber) {
+            const id = playerLookup[teamKey][playerNumber];
+            if (id === undefined) {
+                alert(`Player #${playerNumber} not found in roster`);
+                return null;
+            }
+            return id;
+        }
+
+        // --- Socket.IO Connection Events ---
+
+        socket.on('connect', () => {
+            updateConnectionStatus(true);
+            sync();
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus(false);
+        });
+
+        // --- Socket.IO State Update Listeners ---
+
+        socket.on('update-timer-start', () => syncTimer());
+        socket.on('update-timer-stop', () => syncTimer());
+        socket.on('update-timer', () => syncTimer());
+
+        socket.on('show-extra-time', (data) => {
+            extraTime = data['extra-time'] || 0;
+        });
+
+        socket.on('add-to-score', (data) => {
+            scoreState = data;
+            updateScoreDisplay();
+        });
+
+        socket.on('decrease-to-score', (data) => {
+            scoreState = data;
+            updateScoreDisplay();
+        });
+
+        socket.on('update-teams', () => fetchTeams());
+        socket.on('update-players', () => fetchPlayers());
+        socket.on('update-ads', () => fetchLauncherAdverts());
+        socket.on('update-obs-commands', () => fetchOBSCommands());
+
+        // --- HTTP Sync Functions ---
+
+        async function syncTimer() {
             try {
-                const res = await fetch('/events', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        type: 'card',
-                        team: selectedTeam,
-                        player: player,
-                        card_type: cardType
-                    })
-                });
+                const res = await fetch('/timer');
                 const data = await res.json();
-                if (data.success) {
-                    document.getElementById('card-player').value = '';
-                    console.log('Card event submitted successfully, ID:', data.event_id);
-                } else {
-                    alert('Erro ao submeter cartão: ' + (data.error || 'Unknown error'));
-                }
-            } catch(e) {
-                console.error('Error submitting card:', e);
-                alert('Erro de conexão ao submeter cartão');
+                timerAnchor = data.timer_anchor || 0;
+                timerOffset = data.timer_offset || 0;
+                timerRunning = data.timer_running || false;
+                extraTime = data.extra_time || 0;
+                updateTimerDisplay();
+            } catch (e) {
+                console.error('Timer sync failed:', e);
             }
         }
 
-        async function submitSubstitution() {
-            const playerOut = document.getElementById('substitution_player_out').value;
-            const playerIn = document.getElementById('substitution_player_in').value;
-            
-            if (!playerOut || !playerIn) {
-                alert('Por favor insira ambos os números dos jogadores');
-                return;
-            }
-
+        async function syncScore() {
             try {
-                const res = await fetch('/events', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        type: 'substitution',
-                        team: selectedTeam,
-                        player_out: playerOut,
-                        player_in: playerIn
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    document.getElementById('substitution_player_out').value = '';
-                    document.getElementById('substitution_player_in').value = '';
-                    console.log('Substitution event submitted successfully, ID:', data.event_id);
-                } else {
-                    alert('Erro ao submeter substituição: ' + (data.error || 'Unknown error'));
-                }
-            } catch(e) {
-                console.error('Error submitting substitution:', e);
-                alert('Erro de conexão ao submeter substituição');
+                const res = await fetch('/game_state');
+                scoreState = await res.json();
+                updateScoreDisplay();
+            } catch (e) {
+                console.error('Score sync failed:', e);
             }
         }
 
-        async function submitGoal() {
-            const player = document.getElementById('goal-player').value;
-            if (!player) {
-                alert('Por favor insira o número do marcador');
-                return;
-            }
-
+        async function fetchTeams() {
             try {
-                const res = await fetch('/events', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        type: 'goal',
-                        team: selectedTeam,
-                        player: player
-                    })
-                });
+                const res = await fetch('/teams');
                 const data = await res.json();
-                if (data.success) {
-                    document.getElementById('goal-player').value = '';
-                    console.log('Goal event submitted successfully, ID:', data.event_id);
-                } else {
-                    alert('Erro ao submeter golo: ' + (data.error || 'Unknown error'));
-                }
-            } catch(e) {
-                console.error('Error submitting goal:', e);
-                alert('Erro de conexão ao submeter golo');
+                updateTeamDisplay(data.teams || []);
+            } catch (e) {
+                console.error('Teams fetch failed:', e);
             }
+            // Also fetch players to build lookup
+            await fetchPlayers();
         }
 
-        async function submitFormation(team) {
+        async function fetchPlayers() {
             try {
-                const res = await fetch("/events", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ type: "formation", team: team }),
-                });
+                const res = await fetch('/players');
                 const data = await res.json();
-                if (data.success) {
-                    console.log('Formation event submitted successfully, ID:', data.event_id);
-                } else {
-                    alert('Erro ao submeter formação: ' + (data.error || 'Unknown error'));
-                }
-            } catch(e) {
-                console.error('Error resquesting formation', e);
-                alert('Erro de conexão ao submeter formação');
+                allPlayers = data.players || [];
+                buildPlayerLookup();
+            } catch (e) {
+                console.error('Players fetch failed:', e);
             }
         }
 
         async function fetchLauncherAdverts() {
             try {
-                const res = await fetch('/setup-adds/data');
-                if (!res.ok) throw new Error('Failed to fetch adverts');
-                
-                const adverts = await res.json();
-                
-                // Filter only Launcher action adverts
-                launcherAdverts = adverts.filter(ad => ad.action === 'Launcher');
-                
+                const res = await fetch('/ads');
+                const data = await res.json();
+                console.log('All ads from server:', data.ads);
+                console.log('Ad types:', data.ads.map(ad => ({ id: ad.id, name: ad.name, type: ad.type, typeOf: typeof ad.type })));
+                launcherAdverts = (data.ads || []).filter(
+                    ad => ad.type && ad.type.toLowerCase() === 'launcher'
+                );
+                console.log('Filtered launcher ads:', launcherAdverts);
                 renderLauncherButtons();
             } catch (e) {
-                console.error('Error fetching adverts:', e);
-                document.getElementById('no-launchers-msg').innerText = 'Error loading advertisements';
+                console.error('Ads fetch failed:', e);
             }
         }
 
-        function renderLauncherButtons() {
-            const container = document.getElementById('launcher-buttons-container');
-            
-            if (launcherAdverts.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-xs col-span-full text-center py-4">No launcher advertisements configured</p>';
-                return;
-            }
-            
-            container.innerHTML = launcherAdverts.map(ad => `
-                <button 
-                    onclick="triggerAdvert(${ad.id})" 
-                    class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white py-3 px-4 rounded-xl text-xs sm:text-sm font-bold uppercase transition-all active:scale-95 shadow-lg shadow-amber-900/30 border border-amber-500/20 truncate"
-                    title="${ad.sponsor ? ad.sponsor + ' - ' : ''}${ad.name}"
-                >
-                    ${ad.name}
-                </button>
-            `).join('');
-        }
-
-        async function triggerAdvert(advertId) {
-            const advert = launcherAdverts.find(ad => ad.id === advertId);
-            if (!advert) {
-                console.error('Advert not found:', advertId);
-                return;
-            }
-            
+        async function fetchOBSCommands() {
             try {
-                const res = await fetch('/add-events', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: 'advert',
-                        advert_id: advert.id,
-                        name: advert.name,
-                        sponsor: advert.sponsor,
-                        duration: advert.duration,
-                        imagePath: advert.imagePath
-                    })
-                });
-                
+                const res = await fetch('/obs-commands');
                 const data = await res.json();
-                if (data.success) {
-                    console.log('Advert triggered successfully:', advert.name);
-                } else {
-                    alert('Erro ao lançar anúncio: ' + (data.error || 'Unknown error'));
-                }
+                obsCommands = data.obs_commands || [];
+                renderOBSCommandBar();
             } catch (e) {
-                console.error('Error triggering advert:', e);
-                alert('Erro de conexão ao lançar anúncio');
+                console.error('OBS commands fetch failed:', e);
             }
         }
 
         async function sync() {
-            try {
-                const res = await fetch('/state');
-                if (!res.ok) throw new Error();
-                const state = await res.json();
-                currentState = state;
-                
-                // Sync clock offset
-                const clientReceiveTime = Date.now() / 1000;
-                clockOffset = state.server_time - clientReceiveTime;
-                
-                document.getElementById('status-dot').className = 'status-dot connected';
-                document.getElementById('conn-text').innerText = 'Connected';
+            await Promise.all([
+                syncTimer(),
+                syncScore(),
+                fetchTeams(),
+                fetchPlayers(),
+                fetchLauncherAdverts(),
+                fetchOBSCommands(),
+            ]);
+        }
 
-                document.getElementById('t1-display-name').innerText = state.team1_name || 'TEAM 1';
-                document.getElementById('t2-display-name').innerText = state.team2_name || 'TEAM 2';
-                
-                document.getElementById('team1-btn-name').innerText = state.team1_name || 'Team 1';
-                document.getElementById('team2-btn-name').innerText = state.team2_name || 'Team 2';
-                document.getElementById('team1-formation-btn-name').innerText = state.team1_name || 'Team 1';
-                document.getElementById('team2-formation-btn-name').innerText = state.team2_name || 'Team 2';
-                
-                document.getElementById('t1-display-dot').style.backgroundColor = 
-                    colorPalette[state.team1_bg] || '#3b82f6';
-                document.getElementById('t2-display-dot').style.backgroundColor = 
-                    colorPalette[state.team2_bg] || '#f43f5e';
-                
-                document.getElementById('t1-score-val').innerText = state.team1_score;
-                document.getElementById('t2-score-val').innerText = state.team2_score;
+        // --- Action Functions ---
 
-                document.getElementById('team1-btn').classList.toggle('active', selectedTeam === 'team1');
-                document.getElementById('team2-btn').classList.toggle('active', selectedTeam === 'team2');
+        function update(key, value) {
+            const minutes = parseInt(value, 10);
+            if (isNaN(minutes) || minutes < 0) {
+                alert('Please enter a valid number of minutes');
+                return;
+            }
+            const seconds = minutes * 60;
 
-                // Update timer only if server state changed
-                if (state.last_timer_update !== lastTimerUpdate) {
-                    lastTimerUpdate = state.last_timer_update;
-                    timerAnchor = state.timer_anchor;
-                    timerOffset = state.timer_offset;
-                    timerRunning = state.timer_running;
-                    
-                    if (timerRunning && !localTimerInterval) {
-                        startLocalTimer();
-                    } else if (!timerRunning && localTimerInterval) {
-                        clearInterval(localTimerInterval);
-                        localTimerInterval = null;
-                    }
-                    
-                    updateTimerDisplay();
-                }
-                
-            } catch(e) {
-                document.getElementById('status-dot').className = 'status-dot disconnected';
-                document.getElementById('conn-text').innerText = 'Disconnected';
+            if (key === 'set_time') {
+                socket.emit('set-timer', { 'set': seconds });
+            } else if (key === 'extra_time') {
+                socket.emit('set-extra-time', { 'extra-time': minutes });
             }
         }
 
+        function changeScore(teamKey, delta) {
+            const team = teamKey.replace('_score', '');
+            if (delta > 0) {
+                socket.emit('trigger-goal', { team });
+            } else {
+                socket.emit('cancel-goal', { team });
+            }
+        }
+
+        function timerAction(action) {
+            if (action === 'start') socket.emit('start-timer');
+            else if (action === 'stop') socket.emit('stop-timer');
+            else if (action === 'reset') socket.emit('reset-timer');
+        }
+
+        function submitCard(cardType) {
+            const playerNumber = document.getElementById('card-player').value;
+            if (!playerNumber) {
+                alert('Please enter player number');
+                return;
+            }
+            const playerId = getPlayerIdByNumber(selectedTeam, parseInt(playerNumber, 10));
+            if (playerId === null) return;
+            
+            socket.emit('trigger-event', {
+                type: 'card',
+                team: selectedTeam,
+                player_id: playerId,
+                card_type: cardType
+            });
+            document.getElementById('card-player').value = '';
+        }
+
+        function submitSubstitution() {
+            const playerOutNumber = document.getElementById('substitution_player_out').value;
+            const playerInNumber = document.getElementById('substitution_player_in').value;
+            if (!playerOutNumber || !playerInNumber) {
+                alert('Please fill in both player numbers');
+                return;
+            }
+            
+            const playerOutId = getPlayerIdByNumber(selectedTeam, parseInt(playerOutNumber, 10));
+            const playerInId = getPlayerIdByNumber(selectedTeam, parseInt(playerInNumber, 10));
+            if (playerOutId === null || playerInId === null) return;
+            
+            socket.emit('trigger-event', {
+                type: 'substitution',
+                team: selectedTeam,
+                player_id_out: playerOutId,
+                player_id_in: playerInId
+            });
+            document.getElementById('substitution_player_out').value = '';
+            document.getElementById('substitution_player_in').value = '';
+        }
+
+        function submitGoal() {
+            const playerNumber = document.getElementById('goal-player').value;
+            if (!playerNumber) {
+                alert('Please enter scorer number');
+                return;
+            }
+            const playerId = getPlayerIdByNumber(selectedTeam, parseInt(playerNumber, 10));
+            if (playerId === null) return;
+            
+            socket.emit('trigger-event', {
+                type: 'goal',
+                team: selectedTeam,
+                player_id: playerId
+            });
+            document.getElementById('goal-player').value = '';
+        }
+
+        function submitFormation(team) {
+            socket.emit('trigger-event', { 'type': 'formation', 'team': team });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderLauncherButtons() {
+            const container =
+                document.getElementById("launcher-buttons-container");
+            if (launcherAdverts.length === 0) {
+                container.innerHTML =
+                    '<p class="text-slate-500 text-xs col-span-full text-center py-4">No launcher advertisements configured</p>';
+                return;
+            }
+            container.innerHTML = launcherAdverts
+                .map(
+                    (ad) => `
+                <button 
+                    onclick="triggerAdvert(${ad.id})" 
+                    class="bg-gradient-to-br from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white py-3 px-4 rounded-xl text-xs sm:text-sm font-bold uppercase transition-all active:scale-95 shadow-lg shadow-amber-900/30 border border-amber-500/20 truncate"
+                    title="${escapeHtml(ad.sponsor ? ad.sponsor + ' - ' : '')}${escapeHtml(ad.name)}"
+                >
+                    ${escapeHtml(ad.name) || "Unnamed Ad"}
+                </button>
+            `
+                )
+                .join("");
+        }
+
+        function renderOBSCommandBar() {
+            const container = document.getElementById('obs-command-bar-buttons');
+            if (obsCommands.length === 0) {
+                container.innerHTML =
+                    '<p class="text-slate-500 text-sm col-span-2 sm:col-span-4">No OBS commands configured</p>';
+                return;
+            }
+            container.innerHTML = obsCommands
+                .map((cmd) => {
+                    const bgColor = cmd.color || '#000000';
+                    // Pick white or black text based on luminance
+                    const r = parseInt(bgColor.slice(1, 3), 16);
+                    const g = parseInt(bgColor.slice(3, 5), 16);
+                    const b = parseInt(bgColor.slice(5, 7), 16);
+                    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                    const textColor = lum > 0.5 ? '#000000' : '#ffffff';
+                    return `
+                        <button
+                            onclick="triggerOBSCommand(${cmd.id})"
+                            style="background-color: ${bgColor}; color: ${textColor};"
+                            class="px-6 sm:px-8 py-4 sm:py-6 rounded-xl text-base sm:text-lg font-black uppercase transition-all active:scale-95 hover:opacity-80 shadow-lg border border-white/20 flex flex-col items-center justify-center gap-1"
+                            title="${escapeHtml(cmd.shortcut || '')}"
+                        >
+                            <span>${escapeHtml(cmd.name) || 'Unnamed'}</span>
+                            <span class="text-[10px] sm:text-xs opacity-75 font-mono">${escapeHtml(cmd.shortcut || 'N/A')}</span>
+                        </button>`;
+                })
+                .join('');
+        }
+
+        function triggerOBSCommand(commandId) {
+            socket.emit('trigger-obs-command', { id: commandId });
+        }
+
+        function triggerAdvert(advertId) {
+            socket.emit('trigger-ad', { id: advertId });
+        }
+
+        // --- Initialize ---
+
         startLocalTimer();
-        setInterval(sync, 1000);
+        setInterval(sync, 5000);
         sync();
         selectTeam('team1');
-        fetchLauncherAdverts();
+
     </script>
 </body>
 </html>
