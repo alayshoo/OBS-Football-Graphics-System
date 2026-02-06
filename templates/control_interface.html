@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scoreboard Pro Control</title>
+    <title>OBS Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <link rel="stylesheet" href="static/css/shared.css">
@@ -318,9 +318,15 @@
                 <a href="/setup-ads" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
                     <span>Setup Ads 🤑</span>
                 </a>
-                <a href="/setup-ads" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                <a href="/setup-obs-commands" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
                     <span>Setup OBS Commands ⚙️</span>
                 </a>
+                <button id="export-btn" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                    📤 Export Database
+                </button>
+                <button id="import-btn" class="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all border border-slate-700/50 group flex items-center justify-center">
+                    📥 Import Database
+                </button>
             </div>
         </div>
 
@@ -767,6 +773,115 @@
 
         function triggerAdvert(advertId) {
             socket.emit('trigger-ad', { id: advertId });
+        }
+
+        // --- Import/Export Functionality ---
+
+        document.getElementById('export-btn').addEventListener('click', exportDatabase);
+        document.getElementById('import-btn').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.zip';
+            input.onchange = (e) => importDatabase(e.target.files[0]);
+            input.click();
+        });
+
+        async function exportDatabase() {
+            const btn = document.getElementById('export-btn');
+            const originalText = btn.innerHTML;
+            
+            try {
+                btn.innerHTML = '⏳ Exporting...';
+                btn.disabled = true;
+                
+                const response = await fetch('/export');
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Export failed');
+                }
+                
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = `football_backup_${new Date().toISOString().split('T')[0]}.zip`;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename[^;=\n]*=(?:(['"]).*?\1|[^;\n]*)/);
+                    if (match) {
+                        filename = match[0].split('=')[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                // Download the ZIP file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                btn.innerHTML = '✅ Exported!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert(`Export failed: ${error.message}`);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function importDatabase(file) {
+            if (!file) return;
+            
+            if (!file.name.endsWith('.zip')) {
+                alert('Please select a valid .zip backup file');
+                return;
+            }
+            
+            const btn = document.getElementById('import-btn');
+            const originalText = btn.innerHTML;
+            
+            try {
+                btn.innerHTML = '⏳ Importing...';
+                btn.disabled = true;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Import failed');
+                }
+                
+                btn.innerHTML = '✅ Imported!';
+                alert('Database imported successfully! Refreshing...');
+                
+                // Refresh all data
+                await sync();
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Import error:', error);
+                alert(`Import failed: ${error.message}`);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
 
         // --- Initialize ---

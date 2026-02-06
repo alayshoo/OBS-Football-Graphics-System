@@ -16,6 +16,7 @@ from blueprints.game_events import game_events_bp, set_game_events_score_state, 
 from blueprints.teams import teams_bp, register_teams_socketio
 from blueprints.ads import ads_bp, register_ads_socketio
 from blueprints.obs_commands import obs_commands_bp, register_obs_commands_socketio
+from blueprints.backup import backup_bp
 
 
 Path(MEDIA_UPLOAD_FOLDER).mkdir(parents= True, exist_ok= True)
@@ -77,6 +78,7 @@ app.register_blueprint(game_events_bp)
 app.register_blueprint(teams_bp)
 app.register_blueprint(ads_bp)
 app.register_blueprint(obs_commands_bp)
+app.register_blueprint(backup_bp)
 
 
 register_timer_events_socketio(socketio)

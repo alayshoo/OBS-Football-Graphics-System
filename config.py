@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 
 PORT = int(os.getenv('PORT', 5000))
